@@ -72,8 +72,10 @@ gcc -std=c11 -Wall -Wextra -Wpedantic src/*.c -Iinclude \
 程序启动后显示包含三个按钮的开始界面：
 
 - `START`：求解当前迷宫并播放动画，完成后返回菜单
-- `NEW MAZE`：按当前有效奇数尺寸生成新迷宫并写入 `assets/maze.txt`；尺寸不适用时使用 `91 × 91`
+- `NEW MAZE`：打开宽高输入界面，确认后生成新迷宫并写入 `assets/maze.txt`
 - `QUIT`：退出游戏
+
+尺寸页面点击 `WIDTH` 或 `HEIGHT` 后直接输入数字即可替换原值，`Tab` 切换输入框，退格删除数字。按 `Enter` 或点击 `GENERATE` 确认；`Esc` 或 `CANCEL` 返回菜单且不生成文件。宽高须为 `3` 到 `99` 的奇数，不能同时为 `3`。
 
 窗口可以拖拽缩放。SDL2 会分别按照菜单和迷宫的逻辑画布等比例缩放，宽高比不同时自动留边。菜单支持 `Enter`/空格开始、`N` 生成迷宫、`Q`/`Esc` 退出；动画期间按 `Esc` 可返回菜单。
 
@@ -178,6 +180,13 @@ make test-ui
 
 旧的 `python/maze_gen.py` 已废弃，但仍保留用于参考，不参与当前构建或运行流程。
 
+### 当前开发状态与问题记录
+
+`dev` 分支已经完成 SDL 应用生命周期拆分、C 版完美迷宫生成器、三按钮开始菜单、动画返回菜单，以及可缩放逻辑画布。当前记录以下界面问题，作为后续修改和回归测试依据：
+
+1. **已修复：**`NEW MAZE` 现会打开尺寸输入界面，支持鼠标切换宽高输入框、数字输入、退格、`Tab` 切换、确认和取消，并在生成前校验奇数范围。
+2. **已修复：**缩放后按钮失效源于对 SDL 已转换的鼠标事件再次进行逻辑坐标换算。菜单现直接使用 SDL 提供的逻辑事件坐标，并加入非等比例缩放后的按钮点击回归测试。
+
 ### 开发约定
 
 - 源码使用 C11，并默认启用 `-Wall -Wextra -Wpedantic`。
@@ -257,8 +266,10 @@ gcc -std=c11 -Wall -Wextra -Wpedantic src/*.c -Iinclude \
 The application opens with three menu buttons:
 
 - `START`: solve and animate the current maze, then return to the menu
-- `NEW MAZE`: generate a maze using the current valid odd dimensions and write it to `assets/maze.txt`; fall back to `91 × 91` when necessary
+- `NEW MAZE`: open the width/height input screen, then generate and write the confirmed maze to `assets/maze.txt`
 - `QUIT`: exit the application
+
+On the size screen, click `WIDTH` or `HEIGHT` and type digits to replace its value. Use `Tab` to switch fields and Backspace to delete digits. `Enter` or `GENERATE` confirms; `Esc` or `CANCEL` returns without generating a file. Both dimensions must be odd values from `3` to `99`, and cannot both be `3`.
 
 The window can be resized freely. SDL2 scales the menu and maze logical canvases proportionally and letterboxes them when their aspect ratios differ. Press `Enter`/Space to start, `N` for a new maze, and `Q`/`Esc` to quit from the menu. During animation, `Esc` returns to the menu.
 
@@ -362,6 +373,13 @@ make test-ui
 ```
 
 The old `python/maze_gen.py` is deprecated and retained for reference only. It is not part of the current build or runtime flow.
+
+### Current development status and issue log
+
+The `dev` branch now includes the separated SDL application lifecycle, C perfect-maze generator, three-button start menu, return-to-menu animation flow, and resizable logical canvases. The following UI issues are recorded for implementation and regression testing:
+
+1. **Resolved:** `NEW MAZE` now opens a dimension-entry screen with mouse field selection, numeric input, Backspace, `Tab`, confirm/cancel controls, and odd-range validation before generation.
+2. **Resolved:** Resized clicks failed because already-transformed SDL mouse events were converted to logical coordinates a second time. The menu now consumes SDL's logical event coordinates directly, with a regression test covering button clicks after non-proportional resizing.
 
 ### Development notes
 

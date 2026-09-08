@@ -28,15 +28,7 @@ static uint32_t next_generation_seed(void) {
            (uint32_t)(counter >> 32) ^ sequence;
 }
 
-static int regenerate_maze(int maze_is_ready) {
-    int width = DEFAULT_GENERATED_WIDTH;
-    int height = DEFAULT_GENERATED_HEIGHT;
-
-    if (maze_is_ready && dimensions_can_be_generated(COLS, ROWS)) {
-        width = COLS;
-        height = ROWS;
-    }
-
+static int regenerate_maze(int width, int height) {
     return generate_maze_file(MAZE_FILE, width, height,
                               next_generation_seed()) &&
            load_maze_from_file(MAZE_FILE);
@@ -93,10 +85,28 @@ int main(void) {
             break;
 
         case MENU_NEW_MAZE:
-            maze_is_ready = regenerate_maze(maze_is_ready);
-            status_message = maze_is_ready ? "NEW MAZE GENERATED" :
-                                             "MAZE GENERATION FAILED";
+        {
+            int width = maze_is_ready && dimensions_can_be_generated(COLS, ROWS) ?
+                            COLS : DEFAULT_GENERATED_WIDTH;
+            int height = maze_is_ready && dimensions_can_be_generated(COLS, ROWS) ?
+                             ROWS : DEFAULT_GENERATED_HEIGHT;
+            MazeSizeResult size_result = menu_prompt_maze_size(
+                &app, width, height, &width, &height);
+
+            if (size_result == MAZE_SIZE_CONFIRMED) {
+                maze_is_ready = regenerate_maze(width, height);
+                status_message = maze_is_ready ? "NEW MAZE GENERATED" :
+                                                 "MAZE GENERATION FAILED";
+            } else if (size_result == MAZE_SIZE_CANCELLED) {
+                status_message = "GENERATION CANCELLED";
+            } else if (size_result == MAZE_SIZE_QUIT) {
+                running = 0;
+            } else {
+                exit_code = 1;
+                running = 0;
+            }
             break;
+        }
 
         case MENU_QUIT:
             running = 0;
