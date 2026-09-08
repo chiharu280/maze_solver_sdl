@@ -150,7 +150,7 @@ cd ..
 
 - 源码使用 C11，并默认启用 `-Wall -Wextra -Wpedantic`。
 - BFS 不修改原始迷宫；SDL2 使用单独的路径覆盖层绘制动画。
-- SDL2 资源集中管理，初始化或贴图加载失败时会执行清理。
+- SDL2 初始化、动画播放和资源清理相互独立；资源在应用退出时统一释放。
 - 修改后建议重新执行 `make` 并用默认迷宫做一次完整动画验证。
 
 ---
@@ -303,5 +303,5 @@ It generates a random `91 × 91` perfect maze by default. To use another size, e
 
 - The project targets C11 and enables `-Wall -Wextra -Wpedantic` by default.
 - BFS does not modify the original maze; SDL2 renders the route through a separate overlay.
-- SDL2 resources are centrally cleaned up if initialization or texture loading fails.
+- SDL2 initialization, animation, and cleanup are separate; resources are released once when the application exits.
 - After a change, rebuild with `make` and run the default maze through a complete animation.

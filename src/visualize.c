@@ -9,6 +9,7 @@
 
 /* All SDL-owned resources are grouped to simplify cleanup on every failure path. */
 typedef struct {
+    int sdl_initialized;
     SDL_Window* window;
     SDL_Renderer* renderer;
     SDL_Texture* mouse_texture;
@@ -17,30 +18,48 @@ typedef struct {
 
 static VisualizationContext context = {0};
 
+static SDL_Texture* load_texture(const char* path);
+
 /*
  * Release every resource that may have been allocated during initialization.
  * SDL destroy functions safely accept NULL, so this single cleanup routine can
  * be called after a partial initialization as well as normal application exit.
  */
-static void close_sdl(void) {
+void visualization_shutdown(void) {
     SDL_DestroyTexture(context.mouse_texture);
     SDL_DestroyTexture(context.cheese_texture);
     SDL_DestroyRenderer(context.renderer);
     SDL_DestroyWindow(context.window);
+
+    if (context.sdl_initialized) {
+        SDL_Quit();
+    }
     context = (VisualizationContext){0};
-    SDL_Quit();
 }
 
-static int init_sdl(int width, int height) {
+int visualization_init(int maze_width, int maze_height) {
+    if (maze_width <= 0 || maze_height <= 0 ||
+        maze_width > MAX_COLS || maze_height > MAX_ROWS) {
+        fprintf(stderr, "无效的窗口尺寸\n");
+        return 0;
+    }
+    if (context.sdl_initialized || context.window || context.renderer) {
+        fprintf(stderr, "SDL 可视化已经初始化\n");
+        return 0;
+    }
+
     /* SDL must be initialized before creating a window or renderer. */
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         fprintf(stderr, "SDL 初始化失败: %s\n", SDL_GetError());
         return 0;
     }
+    context.sdl_initialized = 1;
 
     context.window = SDL_CreateWindow("Maze Solver", SDL_WINDOWPOS_CENTERED,
-                                      SDL_WINDOWPOS_CENTERED, width * TILE_SIZE,
-                                      height * TILE_SIZE, SDL_WINDOW_SHOWN);
+                                      SDL_WINDOWPOS_CENTERED,
+                                      maze_width * TILE_SIZE,
+                                      maze_height * TILE_SIZE,
+                                      SDL_WINDOW_SHOWN);
     if (!context.window) {
         fprintf(stderr, "窗口创建失败: %s\n", SDL_GetError());
         return 0;
@@ -54,6 +73,13 @@ static int init_sdl(int width, int height) {
     }
     if (!context.renderer) {
         fprintf(stderr, "渲染器创建失败: %s\n", SDL_GetError());
+        return 0;
+    }
+
+    /* Load the two required sprites after the renderer has been created. */
+    context.mouse_texture = load_texture("assets/mouse.bmp");
+    context.cheese_texture = load_texture("assets/cheese.bmp");
+    if (!context.mouse_texture || !context.cheese_texture) {
         return 0;
     }
 
@@ -187,36 +213,32 @@ static int is_valid_path(const int path_x[], const int path_y[], int path_len) {
     return 1;
 }
 
-int run_visualization(char maze[][MAX_COLS + 1], const int path_x[],
-                      const int path_y[], int path_len) {
-    /* Validate all external data before SDL setup or grid indexing begins. */
+VisualizationResult visualization_play_maze(
+    char maze[][MAX_COLS + 1], const int path_x[], const int path_y[],
+    int path_len) {
+    /* Validate all external data before rendering or grid indexing begins. */
     if (!maze || !path_x || !path_y || !is_valid_path(path_x, path_y, path_len)) {
-        return 0;
+        return VISUALIZATION_ERROR;
     }
-    if (!init_sdl(COLS, ROWS)) {
-        close_sdl();
-        return 0;
-    }
-
-    /* Load the two required sprites after the renderer has been created. */
-    context.mouse_texture = load_texture("assets/mouse.bmp");
-    context.cheese_texture = load_texture("assets/cheese.bmp");
-    if (!context.mouse_texture || !context.cheese_texture) {
-        close_sdl();
-        return 0;
+    if (!context.renderer || !context.mouse_texture || !context.cheese_texture) {
+        fprintf(stderr, "SDL 可视化尚未初始化\n");
+        return VISUALIZATION_ERROR;
     }
 
     if (!animate_path(maze, path_x, path_y, path_len)) {
-        close_sdl();
-        return 1;
+        return VISUALIZATION_QUIT;
     }
 
-    /* The final frame stays on screen until the user closes the window. */
+    return VISUALIZATION_FINISHED;
+}
+
+void visualization_wait_for_close(void) {
+    if (!context.window) {
+        return;
+    }
+
     SDL_Event event;
     while (SDL_WaitEvent(&event) && event.type != SDL_QUIT) {
         /* Ignore non-close events after the animation completes. */
     }
-
-    close_sdl();
-    return 1;
 }
