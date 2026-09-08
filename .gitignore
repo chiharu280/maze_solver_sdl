@@ -8,3 +8,4 @@ build/
 *.dll
 *.so
 .vscode/
+assets/maze.txt

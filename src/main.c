@@ -46,7 +46,9 @@ static VisualizationResult solve_and_visualize(AppContext* app) {
     return visualization_play_maze(app, maze, path_x, path_y, path_len);
 }
 
-int main(void) {
+int main(int argc, char* argv[]) {
+    (void)argc;
+    (void)argv;
     AppContext app = {0};
     int maze_is_ready = load_maze_from_file(MAZE_FILE);
     int running = 1;
