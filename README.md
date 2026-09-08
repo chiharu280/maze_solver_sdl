@@ -144,13 +144,23 @@ make generator
 ./maze_generator
 ```
 
+默认命令会覆盖 `assets/maze.txt`。生成器本身不依赖 SDL2，只需要 C11 编译器。
+
 也可以指定宽度、高度、输出文件和可选的随机种子：
 
 ```bash
 ./maze_generator 51 41 assets/maze.txt 12345
 ```
 
-宽度和高度必须是不超过 `100` 的奇数。生成器采用非递归随机 DFS，输出保证连通且无环，并直接使用读取器所要求的文件格式。旧的 `python/maze_gen.py` 已废弃，但仍保留用于参考。
+宽度和高度必须是 `3` 到 `100` 范围内的奇数（因此实际最大值为 `99`）；`3 × 3` 会因起点和终点重叠而被拒绝。生成器采用非递归随机 DFS，输出保证边界封闭、所有通路连通且无环，并直接使用读取器所要求的文件格式。指定相同尺寸和相同种子可复现完全相同的迷宫。
+
+运行生成器自动化测试：
+
+```bash
+make test-generator
+```
+
+旧的 `python/maze_gen.py` 已废弃，但仍保留用于参考，不参与当前构建或运行流程。
 
 ### 开发约定
 
@@ -303,13 +313,23 @@ make generator
 ./maze_generator
 ```
 
+The default command overwrites `assets/maze.txt`. The generator itself only requires a C11 compiler and does not depend on SDL2.
+
 You can also specify the width, height, output file, and an optional random seed:
 
 ```bash
 ./maze_generator 51 41 assets/maze.txt 12345
 ```
 
-Width and height must be odd and no larger than `100`. The generator uses iterative randomized DFS and writes a connected, acyclic maze directly in the loader's file format. The old `python/maze_gen.py` is deprecated but retained for reference.
+Width and height must be odd values from `3` through `100` (so the effective maximum is `99`); `3 × 3` is rejected because its start and end would overlap. The generator uses iterative randomized DFS and writes a closed-border, connected, acyclic maze directly in the loader's file format. Reusing the same dimensions and seed reproduces the same maze.
+
+Run the generator test suite with:
+
+```bash
+make test-generator
+```
+
+The old `python/maze_gen.py` is deprecated and retained for reference only. It is not part of the current build or runtime flow.
 
 ### Development notes
 
