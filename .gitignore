@@ -1,4 +1,5 @@
 maze_solver
+maze_generator
 dist/
 build/
 *.o

@@ -12,10 +12,12 @@
 | --- | --- |
 | `src/main.c` | 编排流程：加载迷宫、定位 `S`、运行 BFS、启动可视化。 |
 | `src/maze.c` / `include/maze.h` | 迷宫文件解析、完整性校验、`S`/`E` 查找；维护全局 `maze`、`ROWS`、`COLS`。 |
+| `src/generator.c` / `include/generator.h` | 非递归随机 DFS 完美迷宫生成器；可生成内存网格或写入文本文件。 |
 | `src/solver.c` / `include/solver.h` | DFS、BFS 与共享路径缓冲区。 |
 | `src/visualize.c` / `include/visualize.h` | SDL2 初始化、贴图、路径动画和资源清理。 |
 | `assets/` | 运行时必需资源：`maze.txt`、`mouse.bmp`、`cheese.bmp`。 |
-| `python/maze_gen.py` | 仅使用标准库的随机完美迷宫生成器。 |
+| `tools/maze_gen.c` | C 版迷宫生成器命令行入口。 |
+| `python/maze_gen.py` | 已废弃的旧版 Python 生成器，仅保留作为参考。 |
 | `Makefile` | Linux/WSL 原生构建与 MinGW-w64 Windows 交叉编译。 |
 | `lib/` | 随项目提供的 SDL2/MinGW 开发文件；除非明确更新依赖，否则不要修改。 |
 
@@ -35,7 +37,7 @@
 - 保持 C11，并启用（或不削弱）`-Wall -Wextra -Wpedantic`。
 - 在 Linux、WSL 或已正确安装 SDL2 的环境中，使用 `make` 构建、`./maze_solver` 运行。改动后至少用默认迷宫完成一次动画验证。
 - 在 Linux/WSL 为 64 位 Windows 交叉编译：先安装 `mingw-w64`，随后运行 `make windows`；需要发行目录时运行 `make package-win`。若本机 SDL2 包位置不同，先核对 `SDL2_WIN`，并确认 DLL 实际拷贝路径。
-- 迷宫生成器的输出路径是相对于其工作目录的 `../assets/maze.txt`；从 `python/` 目录运行：`python3 maze_gen.py`。修改尺寸时使用不大于 100 的奇数宽高，并重新运行程序验证生成文件。
+- 使用 `make generator` 构建 C 版生成器，并从项目根目录运行 `./maze_generator`。自定义尺寸可运行 `./maze_generator <宽度> <高度> [输出文件 [随机种子]]`；宽高必须为不大于 100 的奇数，并应重新运行程序验证生成文件。
 - 除正常迷宫外，涉及解析或求解的改动应覆盖：非法尺寸、行宽不符、非法字符、重复/缺失 `S` 或 `E`、无路径、最大 `100 x 100` 迷宫，以及路径首尾和相邻性。
 - 当前历史记录表明原生 Windows 环境未必配置了 GCC/Make/Python；不要把“本机无法构建”误判为代码失败。应报告实际使用的平台、工具链和执行过的命令。
 

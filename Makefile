@@ -5,16 +5,34 @@ SRC_DIR := src
 INC_DIR := include
 SRCS    := $(wildcard $(SRC_DIR)/*.c)
 LINUX_TARGET := maze_solver
+GENERATOR_TARGET := maze_generator
+GENERATOR_SRCS := tools/maze_gen.c src/generator.c
+GENERATOR_TEST_TARGET := build/test_generator
+GENERATOR_TEST_SRCS := tests/test_generator.c src/generator.c src/maze.c src/solver.c
 
 SDL_FLAGS := `sdl2-config --cflags --libs`
 
 all: $(LINUX_TARGET)
 
+.PHONY: all clean generator test-generator windows package-win
+
 $(LINUX_TARGET): $(SRCS)
 	$(CC) $(CFLAGS) $(SRCS) -I$(INC_DIR) -o $@ $(SDL_FLAGS)
 
+generator: $(GENERATOR_TARGET)
+
+$(GENERATOR_TARGET): $(GENERATOR_SRCS) include/generator.h include/maze.h
+	$(CC) $(CFLAGS) $(GENERATOR_SRCS) -I$(INC_DIR) -o $@
+
+test-generator: $(GENERATOR_TEST_TARGET)
+	./$(GENERATOR_TEST_TARGET)
+
+$(GENERATOR_TEST_TARGET): $(GENERATOR_TEST_SRCS) include/generator.h include/maze.h include/solver.h
+	mkdir -p build
+	$(CC) $(CFLAGS) $(GENERATOR_TEST_SRCS) -I$(INC_DIR) -o $@
+
 clean:
-	rm -f $(LINUX_TARGET) build/*.o dist/*
+	rm -f $(LINUX_TARGET) $(GENERATOR_TARGET) build/*.o $(GENERATOR_TEST_TARGET) dist/*
 
 # === 下面是新增的 Windows 交叉编译部分 ===
 

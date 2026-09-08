@@ -18,7 +18,7 @@ Maze Solver 是一个使用 **C 和 SDL2** 编写的迷宫求解与动画可视�
 - 使用 SDL2 绘制墙体、路径、老鼠和奶酪
 - 动画展示从起点到终点的移动过程
 - 在动画期间保持窗口关闭事件可响应
-- 使用 Python 随机生成新的完美迷宫
+- 使用 C 随机生成新的完美迷宫
 
 ### 项目结构
 
@@ -26,25 +26,26 @@ Maze Solver 是一个使用 **C 和 SDL2** 编写的迷宫求解与动画可视�
 | --- | --- |
 | `src/main.c` | 程序入口：加载迷宫、调用 BFS、启动可视化 |
 | `src/maze.c` | 迷宫文件读取、格式校验和标记查找 |
+| `src/generator.c` | C 版随机完美迷宫生成器 |
 | `src/solver.c` | DFS、BFS 与路径记录逻辑 |
 | `src/visualize.c` | SDL2 窗口、纹理加载、渲染和动画 |
 | `include/` | 各模块的公共头文件 |
 | `assets/maze.txt` | 默认迷宫 |
 | `assets/mouse.bmp` | 老鼠贴图 |
 | `assets/cheese.bmp` | 奶酪贴图 |
-| `python/maze_gen.py` | 随机迷宫生成脚本 |
+| `tools/maze_gen.c` | C 版迷宫生成器命令行入口 |
+| `python/maze_gen.py` | 已废弃的旧版 Python 生成器（保留参考） |
 | `Makefile` | Linux/WSL 构建与 Windows 交叉编译规则 |
 
 ### 依赖
 
 - C11 兼容编译器，例如 GCC
 - SDL2 开发库
-- Python 3（仅在需要生成新迷宫时使用）
 
 Ubuntu / Debian / WSL 可执行：
 
 ```bash
-sudo apt install build-essential libsdl2-dev python3
+sudo apt install build-essential libsdl2-dev
 ```
 
 ### 构建与运行
@@ -136,15 +137,20 @@ make package-win
 
 ### 生成新迷宫
 
-迷宫生成脚本只使用 Python 标准库。请进入 `python` 目录运行，使生成结果写入项目的 `assets/maze.txt`：
+先构建 C 版生成器，然后从项目根目录生成默认的 `91 × 91` 迷宫：
 
 ```bash
-cd python
-python3 maze_gen.py
-cd ..
+make generator
+./maze_generator
 ```
 
-脚本默认生成 `91 × 91` 的随机完美迷宫。若需更改尺寸，可编辑 `python/maze_gen.py` 底部的 `width, height`；建议使用不大于 `100` 的奇数尺寸。
+也可以指定宽度、高度、输出文件和可选的随机种子：
+
+```bash
+./maze_generator 51 41 assets/maze.txt 12345
+```
+
+宽度和高度必须是不超过 `100` 的奇数。生成器采用非递归随机 DFS，输出保证连通且无环，并直接使用读取器所要求的文件格式。旧的 `python/maze_gen.py` 已废弃，但仍保留用于参考。
 
 ### 开发约定
 
@@ -171,7 +177,7 @@ A recursive **depth-first search (DFS)** implementation is also kept in the proj
 - SDL2 rendering for walls, route, mouse, and cheese
 - Animated traversal from start to destination
 - Responsive close events during animation
-- Python-based random perfect-maze generator
+- C-based random perfect-maze generator
 
 ### Project layout
 
@@ -179,25 +185,26 @@ A recursive **depth-first search (DFS)** implementation is also kept in the proj
 | --- | --- |
 | `src/main.c` | Entry point: load, solve with BFS, and visualize |
 | `src/maze.c` | Maze parsing, validation, and marker lookup |
+| `src/generator.c` | C random perfect-maze generator |
 | `src/solver.c` | DFS, BFS, and path storage |
 | `src/visualize.c` | SDL2 setup, textures, rendering, and animation |
 | `include/` | Public module headers |
 | `assets/maze.txt` | Default maze |
 | `assets/mouse.bmp` | Mouse sprite |
 | `assets/cheese.bmp` | Cheese sprite |
-| `python/maze_gen.py` | Random maze generator |
+| `tools/maze_gen.c` | Command-line entry point for the C generator |
+| `python/maze_gen.py` | Deprecated legacy Python generator, retained for reference |
 | `Makefile` | Linux/WSL build and Windows cross-build rules |
 
 ### Requirements
 
 - A C11-compatible compiler, such as GCC
 - SDL2 development files
-- Python 3, only when generating a new maze
 
 On Ubuntu, Debian, or WSL:
 
 ```bash
-sudo apt install build-essential libsdl2-dev python3
+sudo apt install build-essential libsdl2-dev
 ```
 
 ### Build and run
@@ -289,15 +296,20 @@ Both solvers store coordinates in `path_x`, `path_y`, and `path_len`, ordered fr
 
 ### Generate a new maze
 
-The generator uses only Python's standard library. Run it from the `python` directory so that its output is written to the project's `assets/maze.txt`:
+Build the C generator and run it from the project root to create the default `91 × 91` maze:
 
 ```bash
-cd python
-python3 maze_gen.py
-cd ..
+make generator
+./maze_generator
 ```
 
-It generates a random `91 × 91` perfect maze by default. To use another size, edit `width, height` at the bottom of `python/maze_gen.py`; odd values no larger than `100` are recommended.
+You can also specify the width, height, output file, and an optional random seed:
+
+```bash
+./maze_generator 51 41 assets/maze.txt 12345
+```
+
+Width and height must be odd and no larger than `100`. The generator uses iterative randomized DFS and writes a connected, acyclic maze directly in the loader's file format. The old `python/maze_gen.py` is deprecated but retained for reference.
 
 ### Development notes
 
