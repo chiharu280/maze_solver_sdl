@@ -18,33 +18,38 @@ Maze Solver 是一个使用 **C 和 SDL2** 编写的迷宫求解与动画可视�
 - 使用 SDL2 绘制墙体、路径、老鼠和奶酪
 - 动画展示从起点到终点的移动过程
 - 在动画期间保持窗口关闭事件可响应
-- 使用 Python 随机生成新的完美迷宫
+- 提供开始求解、生成新迷宫和退出游戏的开始界面
+- 窗口可自由缩放，菜单与迷宫保持正确比例和点击区域
+- 使用 C 随机生成新的完美迷宫
 
 ### 项目结构
 
 | 路径 | 说明 |
 | --- | --- |
 | `src/main.c` | 程序入口：加载迷宫、调用 BFS、启动可视化 |
+| `src/app.c` | SDL2 窗口、渲染器、贴图及应用级资源生命周期 |
 | `src/maze.c` | 迷宫文件读取、格式校验和标记查找 |
+| `src/generator.c` | C 版随机完美迷宫生成器 |
+| `src/menu.c` | 开始界面、内置位图字体、按钮绘制与交互 |
 | `src/solver.c` | DFS、BFS 与路径记录逻辑 |
-| `src/visualize.c` | SDL2 窗口、纹理加载、渲染和动画 |
+| `src/visualize.c` | 迷宫渲染和路径动画 |
 | `include/` | 各模块的公共头文件 |
 | `assets/maze.txt` | 默认迷宫 |
 | `assets/mouse.bmp` | 老鼠贴图 |
 | `assets/cheese.bmp` | 奶酪贴图 |
-| `python/maze_gen.py` | 随机迷宫生成脚本 |
+| `tools/maze_gen.c` | C 版迷宫生成器命令行入口 |
+| `python/maze_gen.py` | 已废弃的旧版 Python 生成器（保留参考） |
 | `Makefile` | Linux/WSL 构建与 Windows 交叉编译规则 |
 
 ### 依赖
 
 - C11 兼容编译器，例如 GCC
 - SDL2 开发库
-- Python 3（仅在需要生成新迷宫时使用）
 
 Ubuntu / Debian / WSL 可执行：
 
 ```bash
-sudo apt install build-essential libsdl2-dev python3
+sudo apt install build-essential libsdl2-dev
 ```
 
 ### 构建与运行
@@ -64,7 +69,15 @@ gcc -std=c11 -Wall -Wextra -Wpedantic src/*.c -Iinclude \
 ./maze_solver
 ```
 
-程序打开 SDL2 窗口后会播放求解动画；关闭窗口即可退出程序。
+程序启动后显示包含三个按钮的开始界面：
+
+- `START`：求解当前迷宫并播放动画，完成后返回菜单
+- `NEW MAZE`：打开宽高输入界面，确认后生成新迷宫并写入 `assets/maze.txt`
+- `QUIT`：退出游戏
+
+尺寸页面点击 `WIDTH` 或 `HEIGHT` 后直接输入数字即可替换原值，`Tab` 切换输入框，退格删除数字。按 `Enter` 或点击 `GENERATE` 确认；`Esc` 或 `CANCEL` 返回菜单且不生成文件。宽高须为 `3` 到 `99` 的奇数，不能同时为 `3`。
+
+窗口可以拖拽缩放。SDL2 会分别按照菜单和迷宫的逻辑画布等比例缩放，宽高比不同时自动留边。菜单支持 `Enter`/空格开始、`N` 生成迷宫、`Q`/`Esc` 退出；动画期间按 `Esc` 可返回菜单。
 
 ### 从 Linux / WSL 交叉编译 Windows 版本
 
@@ -136,21 +149,49 @@ make package-win
 
 ### 生成新迷宫
 
-迷宫生成脚本只使用 Python 标准库。请进入 `python` 目录运行，使生成结果写入项目的 `assets/maze.txt`：
+先构建 C 版生成器，然后从项目根目录生成默认的 `91 × 91` 迷宫：
 
 ```bash
-cd python
-python3 maze_gen.py
-cd ..
+make generator
+./maze_generator
 ```
 
-脚本默认生成 `91 × 91` 的随机完美迷宫。若需更改尺寸，可编辑 `python/maze_gen.py` 底部的 `width, height`；建议使用不大于 `100` 的奇数尺寸。
+默认命令会覆盖 `assets/maze.txt`。生成器本身不依赖 SDL2，只需要 C11 编译器。
+
+也可以指定宽度、高度、输出文件和可选的随机种子：
+
+```bash
+./maze_generator 51 41 assets/maze.txt 12345
+```
+
+宽度和高度必须是 `3` 到 `100` 范围内的奇数（因此实际最大值为 `99`）；`3 × 3` 会因起点和终点重叠而被拒绝。生成器采用非递归随机 DFS，输出保证边界封闭、所有通路连通且无环，并直接使用读取器所要求的文件格式。指定相同尺寸和相同种子可复现完全相同的迷宫。
+
+运行生成器自动化测试：
+
+```bash
+make test-generator
+```
+
+菜单、按钮事件、SDL 生命周期及逻辑缩放可使用无显示器测试验证：
+
+```bash
+make test-ui
+```
+
+旧的 `python/maze_gen.py` 已废弃，但仍保留用于参考，不参与当前构建或运行流程。
+
+### 当前开发状态与问题记录
+
+`dev` 分支已经完成 SDL 应用生命周期拆分、C 版完美迷宫生成器、三按钮开始菜单、动画返回菜单，以及可缩放逻辑画布。当前记录以下界面问题，作为后续修改和回归测试依据：
+
+1. **已修复：**`NEW MAZE` 现会打开尺寸输入界面，支持鼠标切换宽高输入框、数字输入、退格、`Tab` 切换、确认和取消，并在生成前校验奇数范围。
+2. **已修复：**缩放后按钮失效源于对 SDL 已转换的鼠标事件再次进行逻辑坐标换算。菜单现直接使用 SDL 提供的逻辑事件坐标，并加入非等比例缩放后的按钮点击回归测试。
 
 ### 开发约定
 
 - 源码使用 C11，并默认启用 `-Wall -Wextra -Wpedantic`。
 - BFS 不修改原始迷宫；SDL2 使用单独的路径覆盖层绘制动画。
-- SDL2 资源集中管理，初始化或贴图加载失败时会执行清理。
+- SDL2 初始化、动画播放和资源清理相互独立；资源在应用退出时统一释放。
 - 修改后建议重新执行 `make` 并用默认迷宫做一次完整动画验证。
 
 ---
@@ -171,33 +212,38 @@ A recursive **depth-first search (DFS)** implementation is also kept in the proj
 - SDL2 rendering for walls, route, mouse, and cheese
 - Animated traversal from start to destination
 - Responsive close events during animation
-- Python-based random perfect-maze generator
+- Start screen with solve, new-maze, and quit actions
+- Freely resizable window with correctly scaled screens and hit targets
+- C-based random perfect-maze generator
 
 ### Project layout
 
 | Path | Purpose |
 | --- | --- |
 | `src/main.c` | Entry point: load, solve with BFS, and visualize |
+| `src/app.c` | SDL2 window, renderer, textures, and application resource lifetime |
 | `src/maze.c` | Maze parsing, validation, and marker lookup |
+| `src/generator.c` | C random perfect-maze generator |
+| `src/menu.c` | Start screen, built-in bitmap font, button rendering, and input |
 | `src/solver.c` | DFS, BFS, and path storage |
-| `src/visualize.c` | SDL2 setup, textures, rendering, and animation |
+| `src/visualize.c` | Maze rendering and route animation |
 | `include/` | Public module headers |
 | `assets/maze.txt` | Default maze |
 | `assets/mouse.bmp` | Mouse sprite |
 | `assets/cheese.bmp` | Cheese sprite |
-| `python/maze_gen.py` | Random maze generator |
+| `tools/maze_gen.c` | Command-line entry point for the C generator |
+| `python/maze_gen.py` | Deprecated legacy Python generator, retained for reference |
 | `Makefile` | Linux/WSL build and Windows cross-build rules |
 
 ### Requirements
 
 - A C11-compatible compiler, such as GCC
 - SDL2 development files
-- Python 3, only when generating a new maze
 
 On Ubuntu, Debian, or WSL:
 
 ```bash
-sudo apt install build-essential libsdl2-dev python3
+sudo apt install build-essential libsdl2-dev
 ```
 
 ### Build and run
@@ -217,7 +263,15 @@ gcc -std=c11 -Wall -Wextra -Wpedantic src/*.c -Iinclude \
 ./maze_solver
 ```
 
-The SDL2 window plays the solution animation. Close the window to exit.
+The application opens with three menu buttons:
+
+- `START`: solve and animate the current maze, then return to the menu
+- `NEW MAZE`: open the width/height input screen, then generate and write the confirmed maze to `assets/maze.txt`
+- `QUIT`: exit the application
+
+On the size screen, click `WIDTH` or `HEIGHT` and type digits to replace its value. Use `Tab` to switch fields and Backspace to delete digits. `Enter` or `GENERATE` confirms; `Esc` or `CANCEL` returns without generating a file. Both dimensions must be odd values from `3` to `99`, and cannot both be `3`.
+
+The window can be resized freely. SDL2 scales the menu and maze logical canvases proportionally and letterboxes them when their aspect ratios differ. Press `Enter`/Space to start, `N` for a new maze, and `Q`/`Esc` to quit from the menu. During animation, `Esc` returns to the menu.
 
 ### Cross-compile a Windows build from Linux / WSL
 
@@ -289,19 +343,47 @@ Both solvers store coordinates in `path_x`, `path_y`, and `path_len`, ordered fr
 
 ### Generate a new maze
 
-The generator uses only Python's standard library. Run it from the `python` directory so that its output is written to the project's `assets/maze.txt`:
+Build the C generator and run it from the project root to create the default `91 × 91` maze:
 
 ```bash
-cd python
-python3 maze_gen.py
-cd ..
+make generator
+./maze_generator
 ```
 
-It generates a random `91 × 91` perfect maze by default. To use another size, edit `width, height` at the bottom of `python/maze_gen.py`; odd values no larger than `100` are recommended.
+The default command overwrites `assets/maze.txt`. The generator itself only requires a C11 compiler and does not depend on SDL2.
+
+You can also specify the width, height, output file, and an optional random seed:
+
+```bash
+./maze_generator 51 41 assets/maze.txt 12345
+```
+
+Width and height must be odd values from `3` through `100` (so the effective maximum is `99`); `3 × 3` is rejected because its start and end would overlap. The generator uses iterative randomized DFS and writes a closed-border, connected, acyclic maze directly in the loader's file format. Reusing the same dimensions and seed reproduces the same maze.
+
+Run the generator test suite with:
+
+```bash
+make test-generator
+```
+
+Run the headless menu, input, SDL lifecycle, and logical-scaling tests with:
+
+```bash
+make test-ui
+```
+
+The old `python/maze_gen.py` is deprecated and retained for reference only. It is not part of the current build or runtime flow.
+
+### Current development status and issue log
+
+The `dev` branch now includes the separated SDL application lifecycle, C perfect-maze generator, three-button start menu, return-to-menu animation flow, and resizable logical canvases. The following UI issues are recorded for implementation and regression testing:
+
+1. **Resolved:** `NEW MAZE` now opens a dimension-entry screen with mouse field selection, numeric input, Backspace, `Tab`, confirm/cancel controls, and odd-range validation before generation.
+2. **Resolved:** Resized clicks failed because already-transformed SDL mouse events were converted to logical coordinates a second time. The menu now consumes SDL's logical event coordinates directly, with a regression test covering button clicks after non-proportional resizing.
 
 ### Development notes
 
 - The project targets C11 and enables `-Wall -Wextra -Wpedantic` by default.
 - BFS does not modify the original maze; SDL2 renders the route through a separate overlay.
-- SDL2 resources are centrally cleaned up if initialization or texture loading fails.
+- SDL2 initialization, animation, and cleanup are separate; resources are released once when the application exits.
 - After a change, rebuild with `make` and run the default maze through a complete animation.

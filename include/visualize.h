@@ -1,13 +1,22 @@
 #ifndef VISUALIZE_H
 #define VISUALIZE_H
 
+#include "app.h"
 #include "maze.h"
 
+typedef enum {
+    VISUALIZATION_ERROR = 0,
+    VISUALIZATION_FINISHED,
+    VISUALIZATION_CANCELLED,
+    VISUALIZATION_QUIT
+} VisualizationResult;
+
 /*
- * Open an SDL window and animate the supplied E-to-S path in reverse, from S
- * to E. The renderer uses a separate overlay and never modifies source maze.
+ * Animate the supplied E-to-S path in reverse, from S to E. The logical maze
+ * canvas scales with the resizable window without modifying the source maze.
  */
-int run_visualization(char maze[][MAX_COLS + 1], const int path_x[],
-                      const int path_y[], int path_len);
+VisualizationResult visualization_play_maze(
+    AppContext* app, char maze[][MAX_COLS + 1], const int path_x[],
+    const int path_y[], int path_len);
 
 #endif
