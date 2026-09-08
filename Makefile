@@ -9,12 +9,14 @@ GENERATOR_TARGET := maze_generator
 GENERATOR_SRCS := tools/maze_gen.c src/generator.c
 GENERATOR_TEST_TARGET := build/test_generator
 GENERATOR_TEST_SRCS := tests/test_generator.c src/generator.c src/maze.c src/solver.c
+MENU_TEST_TARGET := build/test_menu
+MENU_TEST_SRCS := tests/test_menu.c src/app.c src/menu.c src/maze.c src/visualize.c
 
 SDL_FLAGS := `sdl2-config --cflags --libs`
 
 all: $(LINUX_TARGET)
 
-.PHONY: all clean generator test-generator windows package-win
+.PHONY: all clean generator test-generator test-ui windows package-win
 
 $(LINUX_TARGET): $(SRCS)
 	$(CC) $(CFLAGS) $(SRCS) -I$(INC_DIR) -o $@ $(SDL_FLAGS)
@@ -31,8 +33,16 @@ $(GENERATOR_TEST_TARGET): $(GENERATOR_TEST_SRCS) include/generator.h include/maz
 	mkdir -p build
 	$(CC) $(CFLAGS) $(GENERATOR_TEST_SRCS) -I$(INC_DIR) -o $@
 
+test-ui: $(MENU_TEST_TARGET)
+	SDL_VIDEODRIVER=dummy ./$(MENU_TEST_TARGET)
+
+$(MENU_TEST_TARGET): $(MENU_TEST_SRCS) include/app.h include/menu.h include/visualize.h
+	mkdir -p build
+	$(CC) $(CFLAGS) $(MENU_TEST_SRCS) -I$(INC_DIR) -o $@ $(SDL_FLAGS)
+
 clean:
-	rm -f $(LINUX_TARGET) $(GENERATOR_TARGET) build/*.o $(GENERATOR_TEST_TARGET) dist/*
+	rm -f $(LINUX_TARGET) $(GENERATOR_TARGET) build/*.o \
+		$(GENERATOR_TEST_TARGET) $(MENU_TEST_TARGET) dist/*
 
 # === 下面是新增的 Windows 交叉编译部分 ===
 

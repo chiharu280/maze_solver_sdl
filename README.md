@@ -18,6 +18,8 @@ Maze Solver 是一个使用 **C 和 SDL2** 编写的迷宫求解与动画可视�
 - 使用 SDL2 绘制墙体、路径、老鼠和奶酪
 - 动画展示从起点到终点的移动过程
 - 在动画期间保持窗口关闭事件可响应
+- 提供开始求解、生成新迷宫和退出游戏的开始界面
+- 窗口可自由缩放，菜单与迷宫保持正确比例和点击区域
 - 使用 C 随机生成新的完美迷宫
 
 ### 项目结构
@@ -25,10 +27,12 @@ Maze Solver 是一个使用 **C 和 SDL2** 编写的迷宫求解与动画可视�
 | 路径 | 说明 |
 | --- | --- |
 | `src/main.c` | 程序入口：加载迷宫、调用 BFS、启动可视化 |
+| `src/app.c` | SDL2 窗口、渲染器、贴图及应用级资源生命周期 |
 | `src/maze.c` | 迷宫文件读取、格式校验和标记查找 |
 | `src/generator.c` | C 版随机完美迷宫生成器 |
+| `src/menu.c` | 开始界面、内置位图字体、按钮绘制与交互 |
 | `src/solver.c` | DFS、BFS 与路径记录逻辑 |
-| `src/visualize.c` | SDL2 窗口、纹理加载、渲染和动画 |
+| `src/visualize.c` | 迷宫渲染和路径动画 |
 | `include/` | 各模块的公共头文件 |
 | `assets/maze.txt` | 默认迷宫 |
 | `assets/mouse.bmp` | 老鼠贴图 |
@@ -65,7 +69,13 @@ gcc -std=c11 -Wall -Wextra -Wpedantic src/*.c -Iinclude \
 ./maze_solver
 ```
 
-程序打开 SDL2 窗口后会播放求解动画；关闭窗口即可退出程序。
+程序启动后显示包含三个按钮的开始界面：
+
+- `START`：求解当前迷宫并播放动画，完成后返回菜单
+- `NEW MAZE`：按当前有效奇数尺寸生成新迷宫并写入 `assets/maze.txt`；尺寸不适用时使用 `91 × 91`
+- `QUIT`：退出游戏
+
+窗口可以拖拽缩放。SDL2 会分别按照菜单和迷宫的逻辑画布等比例缩放，宽高比不同时自动留边。菜单支持 `Enter`/空格开始、`N` 生成迷宫、`Q`/`Esc` 退出；动画期间按 `Esc` 可返回菜单。
 
 ### 从 Linux / WSL 交叉编译 Windows 版本
 
@@ -160,6 +170,12 @@ make generator
 make test-generator
 ```
 
+菜单、按钮事件、SDL 生命周期及逻辑缩放可使用无显示器测试验证：
+
+```bash
+make test-ui
+```
+
 旧的 `python/maze_gen.py` 已废弃，但仍保留用于参考，不参与当前构建或运行流程。
 
 ### 开发约定
@@ -187,6 +203,8 @@ A recursive **depth-first search (DFS)** implementation is also kept in the proj
 - SDL2 rendering for walls, route, mouse, and cheese
 - Animated traversal from start to destination
 - Responsive close events during animation
+- Start screen with solve, new-maze, and quit actions
+- Freely resizable window with correctly scaled screens and hit targets
 - C-based random perfect-maze generator
 
 ### Project layout
@@ -194,10 +212,12 @@ A recursive **depth-first search (DFS)** implementation is also kept in the proj
 | Path | Purpose |
 | --- | --- |
 | `src/main.c` | Entry point: load, solve with BFS, and visualize |
+| `src/app.c` | SDL2 window, renderer, textures, and application resource lifetime |
 | `src/maze.c` | Maze parsing, validation, and marker lookup |
 | `src/generator.c` | C random perfect-maze generator |
+| `src/menu.c` | Start screen, built-in bitmap font, button rendering, and input |
 | `src/solver.c` | DFS, BFS, and path storage |
-| `src/visualize.c` | SDL2 setup, textures, rendering, and animation |
+| `src/visualize.c` | Maze rendering and route animation |
 | `include/` | Public module headers |
 | `assets/maze.txt` | Default maze |
 | `assets/mouse.bmp` | Mouse sprite |
@@ -234,7 +254,13 @@ gcc -std=c11 -Wall -Wextra -Wpedantic src/*.c -Iinclude \
 ./maze_solver
 ```
 
-The SDL2 window plays the solution animation. Close the window to exit.
+The application opens with three menu buttons:
+
+- `START`: solve and animate the current maze, then return to the menu
+- `NEW MAZE`: generate a maze using the current valid odd dimensions and write it to `assets/maze.txt`; fall back to `91 × 91` when necessary
+- `QUIT`: exit the application
+
+The window can be resized freely. SDL2 scales the menu and maze logical canvases proportionally and letterboxes them when their aspect ratios differ. Press `Enter`/Space to start, `N` for a new maze, and `Q`/`Esc` to quit from the menu. During animation, `Esc` returns to the menu.
 
 ### Cross-compile a Windows build from Linux / WSL
 
@@ -327,6 +353,12 @@ Run the generator test suite with:
 
 ```bash
 make test-generator
+```
+
+Run the headless menu, input, SDL lifecycle, and logical-scaling tests with:
+
+```bash
+make test-ui
 ```
 
 The old `python/maze_gen.py` is deprecated and retained for reference only. It is not part of the current build or runtime flow.

@@ -10,11 +10,13 @@
 
 | 路径 | 职责 |
 | --- | --- |
-| `src/main.c` | 编排流程：加载迷宫、定位 `S`、运行 BFS、启动可视化。 |
+| `src/main.c` | 应用状态循环：菜单操作、迷宫生成、BFS 求解和动画切换。 |
+| `src/app.c` / `include/app.h` | SDL2 应用上下文、可缩放窗口、渲染器、贴图与统一清理。 |
 | `src/maze.c` / `include/maze.h` | 迷宫文件解析、完整性校验、`S`/`E` 查找；维护全局 `maze`、`ROWS`、`COLS`。 |
 | `src/generator.c` / `include/generator.h` | 非递归随机 DFS 完美迷宫生成器；可生成内存网格或写入文本文件。 |
+| `src/menu.c` / `include/menu.h` | 开始菜单、三按钮交互、内置位图字体和状态提示。 |
 | `src/solver.c` / `include/solver.h` | DFS、BFS 与共享路径缓冲区。 |
-| `src/visualize.c` / `include/visualize.h` | SDL2 初始化、贴图、路径动画和资源清理。 |
+| `src/visualize.c` / `include/visualize.h` | 迷宫渲染、路径动画与动画事件处理。 |
 | `assets/` | 运行时必需资源：`maze.txt`、`mouse.bmp`、`cheese.bmp`。 |
 | `tools/maze_gen.c` | C 版迷宫生成器命令行入口。 |
 | `python/maze_gen.py` | 已废弃的旧版 Python 生成器，仅保留作为参考。 |
@@ -32,6 +34,9 @@
 - `path_x`、`path_y` 的路径顺序固定为 `E -> ... -> S`；可视化层通过反向遍历将动画从 `S` 播放到 `E`。任何新求解器都必须遵守此契约，或同步调整公共接口和调用方。
 - DFS 的 `solve_maze()` 会临时以 `.` 标记搜索过程，不能作为“迷宫保持不变”的实现范例；DFS 不保证最短路。
 - 渲染使用独立的 `revealed` 覆盖层展示路线，避免为动画修改 `maze`。动画等待期间必须继续处理 `SDL_QUIT`；SDL 资源应走统一清理路径。
+- `AppContext` 由 `main` 创建并持有，菜单和动画共享同一个窗口与渲染器；只在应用启动时初始化一次、最终退出时清理一次。
+- 窗口必须保留 `SDL_WINDOW_RESIZABLE`。菜单使用 `800 x 600` 逻辑画布，迷宫使用 `COLS * TILE_SIZE` × `ROWS * TILE_SIZE` 逻辑画布；鼠标坐标须通过 `SDL_RenderWindowToLogical()` 转换后再做按钮命中判断。
+- 菜单操作固定为 `MENU_START`、`MENU_NEW_MAZE`、`MENU_QUIT`。动画完成或取消后返回菜单，只有 `SDL_QUIT` 才退出整个应用。
 - 资源路径目前相对于项目/运行目录：`assets/maze.txt`、`assets/mouse.bmp`、`assets/cheese.bmp`。移动可执行文件或调整打包布局时须一起更新或保留该目录结构。
 
 ## 开发与验证
@@ -41,6 +46,7 @@
 - 在 Linux/WSL 为 64 位 Windows 交叉编译：先安装 `mingw-w64`，随后运行 `make windows`；需要发行目录时运行 `make package-win`。若本机 SDL2 包位置不同，先核对 `SDL2_WIN`，并确认 DLL 实际拷贝路径。
 - 使用 `make generator` 构建 C 版生成器，并从项目根目录运行 `./maze_generator`。自定义尺寸可运行 `./maze_generator <宽度> <高度> [输出文件 [随机种子]]`；宽高必须为不大于 100 的奇数，并应重新运行程序验证生成文件。
 - 修改生成器后运行 `make test-generator`；测试应覆盖非法尺寸、固定种子复现、封闭边界、唯一标记、全通路连通、无环、文件往返，以及生成迷宫可被 BFS 求解且保持不变。
+- 修改菜单、SDL 生命周期或缩放逻辑后运行 `make test-ui`；该测试使用 SDL dummy 视频驱动验证按钮事件、快捷键、动画取消、逻辑画布切换和资源清理。
 - 除正常迷宫外，涉及解析或求解的改动应覆盖：非法尺寸、行宽不符、非法字符、重复/缺失 `S` 或 `E`、无路径、最大 `100 x 100` 迷宫，以及路径首尾和相邻性。
 - 当前历史记录表明原生 Windows 环境未必配置了 GCC、Make、SDL2 或 MinGW-w64；不要把“本机无法构建”误判为代码失败。应报告实际使用的平台、工具链和执行过的命令。
 
