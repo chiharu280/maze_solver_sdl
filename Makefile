@@ -42,7 +42,8 @@ $(MENU_TEST_TARGET): $(MENU_TEST_SRCS) include/app.h include/menu.h include/ui.h
 
 clean:
 	rm -f $(LINUX_TARGET) $(GENERATOR_TARGET) build/*.o \
-		$(GENERATOR_TEST_TARGET) $(MENU_TEST_TARGET) $(WIN_TARGET) dist/*.dll
+		$(GENERATOR_TEST_TARGET) $(MENU_TEST_TARGET)
+	rm -rf -- dist
 
 # === 下面是新增的 Windows 交叉编译部分 ===
 
