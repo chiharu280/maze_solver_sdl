@@ -41,8 +41,9 @@ $(MENU_TEST_TARGET): $(MENU_TEST_SRCS) include/app.h include/menu.h include/ui.h
 	$(CC) $(CFLAGS) $(MENU_TEST_SRCS) -I$(INC_DIR) -o $@ $(SDL_FLAGS)
 
 clean:
+	rm -rf dist/*
 	rm -f $(LINUX_TARGET) $(GENERATOR_TARGET) build/*.o \
-		$(GENERATOR_TEST_TARGET) $(MENU_TEST_TARGET) $(WIN_TARGET) dist/*.dll
+		$(GENERATOR_TEST_TARGET) $(MENU_TEST_TARGET) $(WIN_TARGET)
 
 # === 下面是新增的 Windows 交叉编译部分 ===
 
