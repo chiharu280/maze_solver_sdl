@@ -1,0 +1,38 @@
+# 自动识别文本文件，并在仓库中统一保存为 LF。
+* text=auto
+
+# 项目自有的源码、测试、文档和配置始终使用 LF，避免 Windows 与
+# Linux/WSL 之间产生仅换行符不同的提交。
+/.gitattributes text eol=lf
+/.gitignore text eol=lf
+/AGENTS.md text eol=lf
+/Makefile text eol=lf
+/README.md text eol=lf
+/src/** text eol=lf
+/include/** text eol=lf
+/tests/** text eol=lf
+/tools/** text eol=lf
+/assets/*.txt text eol=lf
+/assets/*.hex text eol=lf
+
+# 图片、动态库、可执行文件和静态库必须按二进制处理。
+*.bmp binary
+*.png binary
+*.wav binary
+*.dll binary
+*.exe binary
+*.a binary
+*.lib binary
+*.o binary
+*.obj binary
+*.so binary
+*.dylib binary
+*.pdb binary
+
+# lib/ 是随项目提供的第三方 SDL2 内容，不计入 GitHub 语言统计。
+/lib/** linguist-vendored
+
+# 构建和发行目录即使以后被跟踪，也应视为生成内容。
+/build/** linguist-generated=true
+/dist/** linguist-generated=true
+/assets/ui_font.hex linguist-generated=true

@@ -154,6 +154,8 @@ static void render_completion_dialog(AppContext* app,
     const SDL_Rect buttons[] = {{165, 330, 210, 66}, {425, 330, 210, 66}};
     const int chinese = language == UI_LANGUAGE_CHINESE;
     const int french = language == UI_LANGUAGE_FRENCH;
+    const int japanese = language == UI_LANGUAGE_JAPANESE;
+    const int cjk = chinese || japanese;
 
     render_scaled_maze(app, maze, revealed, mouse_x, mouse_y);
     SDL_SetRenderDrawColor(app->renderer, 2, 6, 23, 175);
@@ -165,8 +167,9 @@ static void render_completion_dialog(AppContext* app,
 
     ui_draw_text(app, chinese ? "老鼠已经找到奶酪了" :
                       french ? "LA SOURIS A TROUVÉ LE FROMAGE" :
+                      japanese ? "ネズミがチーズを見つけました" :
                                "MOUSE FOUND THE CHEESE",
-                 DIALOG_WIDTH / 2, 220, chinese ? 2 : 3,
+                 DIALOG_WIDTH / 2, 220, cjk ? 2 : 3,
                  (SDL_Color){241, 245, 249, 255});
     for (int i = 0; i < 2; ++i) {
         if (hovered == i) {
@@ -178,11 +181,13 @@ static void render_completion_dialog(AppContext* app,
         SDL_SetRenderDrawColor(app->renderer, 96, 165, 250, 255);
         SDL_RenderDrawRect(app->renderer, &buttons[i]);
     }
-    ui_draw_text(app, chinese ? "再来一次" : french ? "REJOUER" : "PLAY AGAIN", 270,
-                 chinese ? 346 : 350, chinese ? 2 : 3,
+    ui_draw_text(app, chinese ? "再来一次" : french ? "REJOUER" :
+                      japanese ? "もう一度" : "PLAY AGAIN", 270,
+                 cjk ? 346 : 350, cjk ? 2 : 3,
                  (SDL_Color){241, 245, 249, 255});
-    ui_draw_text(app, chinese ? "退出" : french ? "QUITTER" : "EXIT", 530,
-                 chinese ? 346 : 350, chinese ? 2 : 3,
+    ui_draw_text(app, chinese ? "退出" : french ? "QUITTER" :
+                      japanese ? "終了" : "EXIT", 530,
+                 cjk ? 346 : 350, cjk ? 2 : 3,
                  (SDL_Color){241, 245, 249, 255});
     SDL_RenderPresent(app->renderer);
 }
@@ -199,7 +204,9 @@ static VisualizationResult show_completion_dialog(
     SDL_SetWindowTitle(app->window, language == UI_LANGUAGE_CHINESE ?
                       "迷宫求解器 - 完成" :
                       language == UI_LANGUAGE_FRENCH ?
-                      "Labyrinthe - Terminé" : "Maze Solver - Complete");
+                      "Labyrinthe - Terminé" :
+                      language == UI_LANGUAGE_JAPANESE ?
+                      "迷路ソルバー - 完了" : "Maze Solver - Complete");
     for (;;) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
@@ -261,6 +268,8 @@ VisualizationResult visualization_play_maze(
                       "迷宫求解器 - 求解中" :
                       language == UI_LANGUAGE_FRENCH ?
                       "Labyrinthe - Résolution" :
+                      language == UI_LANGUAGE_JAPANESE ?
+                      "迷路ソルバー - 探索中" :
                       "Maze Solver - Solving (Esc: Menu)");
 
     for (int i = path_len - 1; i >= 0; --i) {

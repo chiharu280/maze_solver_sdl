@@ -20,7 +20,7 @@ Maze Solver 是一个使用 **C 和 SDL2** 编写的迷宫求解与动画可视�
 - 求解完成后提供“再来一次”或返回初始界面的选择
 - 在动画期间保持窗口关闭事件可响应
 - 提供开始求解、生成新迷宫、语言切换和退出游戏的开始界面
-- 内置中文、英文和法文界面，不依赖操作系统字体
+- 内置中文、英文、法文和日文界面，不依赖操作系统字体
 - 窗口可自由缩放，菜单与迷宫保持正确比例和点击区域
 - 使用 C 随机生成新的完美迷宫
 
@@ -33,14 +33,14 @@ Maze Solver 是一个使用 **C 和 SDL2** 编写的迷宫求解与动画可视�
 | `src/maze.c` | 迷宫文件读取、格式校验和标记查找 |
 | `src/generator.c` | C 版随机完美迷宫生成器 |
 | `src/menu.c` | 开始界面、语言选择界面、按钮绘制与交互 |
-| `src/ui.c` | 中英法界面文本和 UTF-8 位图字体渲染 |
+| `src/ui.c` | 中英法日界面文本和 UTF-8 位图字体渲染 |
 | `src/solver.c` | DFS、BFS 与路径记录逻辑 |
 | `src/visualize.c` | 迷宫渲染和路径动画 |
 | `include/` | 各模块的公共头文件 |
 | `assets/maze.txt` | 默认迷宫 |
 | `assets/mouse.bmp` | 老鼠贴图 |
 | `assets/cheese.bmp` | 奶酪贴图 |
-| `assets/ui_font.hex` | 界面所需的中文字形子集 |
+| `assets/ui_font.hex` | 界面所需的中日文字形子集 |
 | `tools/maze_gen.c` | C 版迷宫生成器命令行入口 |
 | `python/maze_gen.py` | 已废弃的旧版 Python 生成器（保留参考） |
 | `Makefile` | Linux/WSL 构建与 Windows 交叉编译规则 |
@@ -77,14 +77,14 @@ gcc -std=c11 -Wall -Wextra -Wpedantic src/*.c -Iinclude \
 
 - `开始`：求解当前迷宫并播放动画
 - `新迷宫`：打开宽高输入界面，确认后生成新迷宫并写入 `assets/maze.txt`
-- `语言`：进入独立语言选择页，可选择中文、English 或 Français
+- `语言`：进入独立语言选择页，可选择中文、English、Français 或日本語
 - `退出`：退出游戏
 
 老鼠到达奶酪后，迷宫中央会显示完成窗口。选择“再来一次”会重新播放当前迷宫；选择“退出”或按 `Esc` 会返回初始界面。关闭 SDL 窗口才会退出整个应用。
 
 尺寸页面点击 `WIDTH` 或 `HEIGHT` 后直接输入数字即可替换原值，`Tab` 切换输入框，退格删除数字。按 `Enter` 或点击 `GENERATE` 确认；`Esc` 或 `CANCEL` 返回菜单且不生成文件。宽高须为 `3` 到 `99` 的奇数，不能同时为 `3`。
 
-窗口可以拖拽缩放。SDL2 会分别按照菜单和迷宫的逻辑画布等比例缩放，宽高比不同时自动留边。菜单支持 `Enter`/空格开始、`N` 生成迷宫、`L` 打开语言选择页、`Q`/`Esc` 退出；语言页也可按 `C`、`E`、`F` 选择中文、英文、法文。动画期间按 `Esc` 可返回菜单。
+窗口可以拖拽缩放。SDL2 会分别按照菜单和迷宫的逻辑画布等比例缩放，宽高比不同时自动留边。菜单支持 `Enter`/空格开始、`N` 生成迷宫、`L` 打开语言选择页、`Q`/`Esc` 退出；语言页也可按 `C`、`E`、`F`、`J` 选择中文、英文、法文、日文。动画期间按 `Esc` 可返回菜单。
 
 ### 从 Linux / WSL 交叉编译 Windows 版本
 
@@ -189,10 +189,18 @@ make test-ui
 
 ### 当前开发状态与问题记录
 
-当前程序已经具备 SDL 应用生命周期拆分、C 版完美迷宫生成器、四按钮开始菜单、三语言选择、完成弹窗，以及可缩放逻辑画布。以下界面问题保留为回归测试记录：
+以下是 **2026-09-09** 开发过程中遇到的问题及对应修改：
 
-1. **已修复：**`NEW MAZE` 现会打开尺寸输入界面，支持鼠标切换宽高输入框、数字输入、退格、`Tab` 切换、确认和取消，并在生成前校验奇数范围。
-2. **已修复：** 缩放后按钮失效源于对 SDL 已转换的鼠标事件再次进行逻辑坐标换算。菜单现直接使用 SDL 提供的逻辑事件坐标，并加入非等比例缩放后的按钮点击回归测试。
+1. **求解结束后缺少交互选择：** 原实现只短暂停留后返回菜单。现改为在迷宫中央显示完成弹窗，提供“再来一次”和“退出”两个选项；前者重播当前迷宫，后者返回初始界面，`SDL_QUIT` 仍会退出整个应用。
+2. **内置英文位图字体无法显示中文：** 将字体绘制从菜单模块拆分到共享 UI 模块，加入 UTF-8 解码和项目所需的中文字形子集，因此不需要新增 SDL_ttf 或操作系统字体依赖。
+3. **英文语言按钮文字超出按钮范围：** 将主菜单上的 `LANGUAGE ENGLISH` 缩短为 `LANGUAGE`，并改为点击后进入独立语言选择界面。该界面现支持中文、English、Français、日本語，显示当前选择，并可通过鼠标或 `C`、`E`、`F`、`J` 快捷键切换。
+4. **法语文本包含原字体不支持的重音字符：** 为拉丁位图字体补充 `À`、`Ç`、`É`、`Ê`，并完成菜单、尺寸输入、状态提示、完成弹窗和窗口标题的法语本地化。
+5. **动画移动时起点会残留另一只老鼠：** 修正起点贴图的绘制条件，动画和完成弹窗现在只显示当前位置的老鼠。
+6. **`make clean` 遇到 `dist/assets` 目录时失败：** 清理规则改为只删除明确的构建目标和 DLL，不再用 `dist/*` 匹配目录。
+7. **文档语言不足：** README 在中英文基础上新增了完整法语和日语版本，四个版本保持相同章节结构，并加入顶部语言导航。
+8. **程序缺少日语界面：** 在语言枚举、菜单、尺寸输入、状态提示、完成弹窗和窗口标题中加入日语，并扩展语言选择页、`J` 快捷键及所需的假名和汉字位图。
+
+本轮修改已通过 Linux C11 编译、`make test-generator`、SDL dummy 驱动下的 `make test-ui`、ASan/UBSan 检查、MinGW-w64 Windows 交叉编译和发行目录打包。UI 测试覆盖语言页面、缩放点击、动画取消，以及完成弹窗的重播和返回菜单操作。
 
 ### 开发约定
 
@@ -221,7 +229,7 @@ A recursive **depth-first search (DFS)** implementation is also kept in the proj
 - Completion dialog with replay and return-to-menu actions
 - Responsive close events during animation
 - Start screen with solve, new-maze, language, and quit actions
-- Built-in Chinese, English, and French UI without a system-font dependency
+- Built-in Chinese, English, French, and Japanese UI without a system-font dependency
 - Freely resizable window with correctly scaled screens and hit targets
 - C-based random perfect-maze generator
 
@@ -234,14 +242,14 @@ A recursive **depth-first search (DFS)** implementation is also kept in the proj
 | `src/maze.c` | Maze parsing, validation, and marker lookup |
 | `src/generator.c` | C random perfect-maze generator |
 | `src/menu.c` | Start screen, language selection, button rendering, and input |
-| `src/ui.c` | Chinese, English, and French UI strings and bitmap-font rendering |
+| `src/ui.c` | Chinese, English, French, and Japanese UI strings and bitmap-font rendering |
 | `src/solver.c` | DFS, BFS, and path storage |
 | `src/visualize.c` | Maze rendering and route animation |
 | `include/` | Public module headers |
 | `assets/maze.txt` | Default maze |
 | `assets/mouse.bmp` | Mouse sprite |
 | `assets/cheese.bmp` | Cheese sprite |
-| `assets/ui_font.hex` | Chinese glyph subset used by the UI |
+| `assets/ui_font.hex` | Chinese and Japanese glyph subset used by the UI |
 | `tools/maze_gen.c` | Command-line entry point for the C generator |
 | `python/maze_gen.py` | Deprecated legacy Python generator, retained for reference |
 | `Makefile` | Linux/WSL build and Windows cross-build rules |
@@ -278,14 +286,14 @@ The application defaults to Chinese and opens with four menu buttons:
 
 - `START`: solve and animate the current maze
 - `NEW MAZE`: open the width/height input screen, then generate and write the confirmed maze to `assets/maze.txt`
-- `LANGUAGE`: open a separate screen and choose Chinese, English, or French
+- `LANGUAGE`: open a separate screen and choose Chinese, English, French, or Japanese
 - `QUIT`: exit the application
 
 When the mouse reaches the cheese, a centered completion dialog offers `PLAY AGAIN` to replay the current maze and `EXIT` to return to the initial menu. Closing the SDL window still exits the application.
 
 On the size screen, click `WIDTH` or `HEIGHT` and type digits to replace its value. Use `Tab` to switch fields and Backspace to delete digits. `Enter` or `GENERATE` confirms; `Esc` or `CANCEL` returns without generating a file. Both dimensions must be odd values from `3` to `99`, and cannot both be `3`.
 
-The window can be resized freely. SDL2 scales the menu and maze logical canvases proportionally and letterboxes them when their aspect ratios differ. Press `Enter`/Space to start, `N` for a new maze, `L` to open language selection, and `Q`/`Esc` to quit from the menu. On the language screen, `C`, `E`, and `F` select Chinese, English, and French. During animation, `Esc` returns to the menu.
+The window can be resized freely. SDL2 scales the menu and maze logical canvases proportionally and letterboxes them when their aspect ratios differ. Press `Enter`/Space to start, `N` for a new maze, `L` to open language selection, and `Q`/`Esc` to quit from the menu. On the language screen, `C`, `E`, `F`, and `J` select Chinese, English, French, and Japanese. During animation, `Esc` returns to the menu.
 
 ### Cross-compile a Windows build from Linux / WSL
 
@@ -390,10 +398,18 @@ The old `python/maze_gen.py` is deprecated and retained for reference only. It i
 
 ### Current development status and issue log
 
-The current application includes the separated SDL application lifecycle, C perfect-maze generator, four-button start menu, three-language selection, completion dialog, and resizable logical canvases. The following UI issues are recorded for regression testing:
+The following problems were encountered and addressed during development on **2026-09-09**:
 
-1. **Resolved:** `NEW MAZE` now opens a dimension-entry screen with mouse field selection, numeric input, Backspace, `Tab`, confirm/cancel controls, and odd-range validation before generation.
-2. **Resolved:** Resized clicks failed because already-transformed SDL mouse events were converted to logical coordinates a second time. The menu now consumes SDL's logical event coordinates directly, with a regression test covering button clicks after non-proportional resizing.
+1. **No interactive choice after solving:** The previous implementation paused briefly and then returned to the menu. A centered completion dialog now offers `PLAY AGAIN` and `EXIT`; the former replays the current maze, the latter returns to the initial screen, and `SDL_QUIT` still exits the entire application.
+2. **The built-in English bitmap font could not display Chinese:** Font rendering was moved from the menu into a shared UI module, with UTF-8 decoding and a subset of the Chinese glyphs required by the project. This avoids adding SDL_ttf or a system-font dependency.
+3. **The English language label overflowed its button:** `LANGUAGE ENGLISH` was shortened to `LANGUAGE`, which now opens a dedicated language screen. The screen now supports 中文, English, Français, and 日本語, indicates the current selection, and accepts mouse input or the `C`, `E`, `F`, and `J` shortcuts.
+4. **French text required accented characters missing from the font:** The Latin bitmap font now includes `À`, `Ç`, `É`, and `Ê`, and French localization covers the menu, dimension input, status messages, completion dialog, and window titles.
+5. **A second mouse remained at the start during animation:** The start-cell sprite condition was corrected, so the animation and completion dialog now show the mouse only at its current position.
+6. **`make clean` failed when `dist/assets` was a directory:** The cleanup rule now removes only explicit build targets and DLL files instead of matching directories with `dist/*`.
+7. **Documentation was available in too few languages:** Complete French and Japanese README sections were added alongside Chinese and English. All four versions use the same section structure and are linked from the language navigation at the top.
+8. **The application had no Japanese UI:** Japanese was added to the language enum, menu, dimension input, status messages, completion dialog, and window titles. The language screen, `J` shortcut, and required kana and kanji bitmap glyphs were added as well.
+
+This work passed the Linux C11 build, `make test-generator`, `make test-ui` with SDL’s dummy video driver, ASan/UBSan checks, the MinGW-w64 Windows cross-build, and release-directory packaging. UI coverage includes the language screen, resized clicks, animation cancellation, and both completion-dialog actions.
 
 ### Development notes
 
@@ -422,7 +438,7 @@ Une implémentation récursive de la **recherche en profondeur (DFS)** est égal
 - Choix entre rejouer et revenir à l’écran initial après la résolution
 - Prise en charge de la fermeture de la fenêtre pendant l’animation
 - Écran d’accueil permettant de lancer la résolution, créer un labyrinthe, choisir la langue ou quitter
-- Interface intégrée en chinois, anglais et français, sans dépendance aux polices du système
+- Interface intégrée en chinois, anglais, français et japonais, sans dépendance aux polices du système
 - Fenêtre librement redimensionnable avec conservation des proportions et des zones cliquables
 - Génération aléatoire de labyrinthes parfaits en C
 
@@ -435,14 +451,14 @@ Une implémentation récursive de la **recherche en profondeur (DFS)** est égal
 | `src/maze.c` | Lecture du fichier, validation du format et recherche des marqueurs |
 | `src/generator.c` | Générateur aléatoire de labyrinthes parfaits en C |
 | `src/menu.c` | Écran d’accueil, sélection de la langue, rendu des boutons et interactions |
-| `src/ui.c` | Textes chinois, anglais et français et rendu de la police bitmap UTF-8 |
+| `src/ui.c` | Textes chinois, anglais, français et japonais et rendu de la police bitmap UTF-8 |
 | `src/solver.c` | Solveurs DFS et BFS et stockage du chemin |
 | `src/visualize.c` | Rendu du labyrinthe et animation du chemin |
 | `include/` | En-têtes publics des modules |
 | `assets/maze.txt` | Labyrinthe par défaut |
 | `assets/mouse.bmp` | Image de la souris |
 | `assets/cheese.bmp` | Image du fromage |
-| `assets/ui_font.hex` | Sous-ensemble de glyphes chinois requis par l’interface |
+| `assets/ui_font.hex` | Sous-ensemble de glyphes chinois et japonais requis par l’interface |
 | `tools/maze_gen.c` | Point d’entrée en ligne de commande du générateur C |
 | `python/maze_gen.py` | Ancien générateur Python obsolète, conservé comme référence |
 | `Makefile` | Règles de compilation Linux/WSL et de compilation croisée Windows |
@@ -479,14 +495,14 @@ L’application utilise le chinois par défaut et affiche un écran d’accueil 
 
 - `开始` : résoudre et animer le labyrinthe actuel
 - `新迷宫` : ouvrir l’écran de saisie des dimensions, puis générer le labyrinthe confirmé dans `assets/maze.txt`
-- `语言` : ouvrir une page séparée permettant de choisir 中文, English ou Français
+- `语言` : ouvrir une page séparée permettant de choisir 中文, English, Français ou 日本語
 - `退出` : quitter l’application
 
 Lorsque la souris atteint le fromage, une fenêtre de fin apparaît au centre du labyrinthe. `REJOUER` relance l’animation du labyrinthe actuel ; `QUITTER` ou `Esc` revient à l’écran initial. Seule la fermeture de la fenêtre SDL quitte entièrement l’application.
 
 Sur l’écran des dimensions, cliquez sur `LARGEUR` ou `HAUTEUR`, puis saisissez des chiffres pour remplacer la valeur. `Tab` change de champ et Retour arrière supprime un chiffre. `Entrée` ou `CRÉER` confirme ; `Esc` ou `ANNULER` revient au menu sans créer de fichier. Les deux dimensions doivent être des nombres impairs compris entre `3` et `99`, et ne peuvent pas être toutes les deux égales à `3`.
 
-La fenêtre peut être librement redimensionnée. SDL2 redimensionne proportionnellement les canevas logiques du menu et du labyrinthe, avec des bandes lorsque leurs proportions diffèrent. Dans le menu, `Entrée`/Espace lance la résolution, `N` crée un labyrinthe, `L` ouvre le choix de la langue et `Q`/`Esc` quitte. Sur l’écran des langues, `C`, `E` et `F` sélectionnent le chinois, l’anglais et le français. Pendant l’animation, `Esc` revient au menu.
+La fenêtre peut être librement redimensionnée. SDL2 redimensionne proportionnellement les canevas logiques du menu et du labyrinthe, avec des bandes lorsque leurs proportions diffèrent. Dans le menu, `Entrée`/Espace lance la résolution, `N` crée un labyrinthe, `L` ouvre le choix de la langue et `Q`/`Esc` quitte. Sur l’écran des langues, `C`, `E`, `F` et `J` sélectionnent le chinois, l’anglais, le français et le japonais. Pendant l’animation, `Esc` revient au menu.
 
 ### Compilation croisée pour Windows depuis Linux / WSL
 
@@ -591,10 +607,18 @@ L’ancien fichier `python/maze_gen.py` est obsolète et conservé uniquement co
 
 ### État actuel du développement et suivi des problèmes
 
-L’application comprend actuellement un cycle de vie SDL séparé, un générateur C de labyrinthes parfaits, un écran d’accueil à quatre boutons, un choix parmi trois langues, une fenêtre de fin et des canevas logiques redimensionnables. Les problèmes d’interface suivants sont conservés comme tests de non-régression :
+Les problèmes suivants ont été rencontrés et corrigés pendant le développement du **9 septembre 2026** :
 
-1. **Corrigé :** `NEW MAZE` ouvre désormais un écran de saisie des dimensions avec sélection des champs à la souris, saisie numérique, Retour arrière, changement de champ avec `Tab`, confirmation ou annulation, et validation des dimensions impaires avant la génération.
-2. **Corrigé :** les clics après redimensionnement échouaient parce que les coordonnées de souris déjà transformées par SDL étaient converties une seconde fois. Le menu utilise maintenant directement les coordonnées logiques fournies par SDL, avec un test de non-régression couvrant les clics après un redimensionnement non proportionnel.
+1. **Aucun choix interactif après la résolution :** l’ancienne implémentation attendait brièvement avant de revenir au menu. Une fenêtre de fin centrée propose désormais `REJOUER` et `QUITTER` ; la première option relance le labyrinthe actuel, la seconde revient à l’écran initial, tandis que `SDL_QUIT` ferme toujours toute l’application.
+2. **La police bitmap anglaise intégrée ne pouvait pas afficher le chinois :** le rendu de la police a été extrait du menu vers un module UI partagé, avec décodage UTF-8 et ajout du sous-ensemble de glyphes chinois nécessaire au projet. SDL_ttf et les polices du système restent inutiles.
+3. **Le libellé anglais de sélection de langue dépassait du bouton :** `LANGUAGE ENGLISH` a été raccourci en `LANGUAGE`, qui ouvre maintenant un écran de sélection dédié. Celui-ci prend désormais en charge 中文, English, Français et 日本語, indique la langue actuelle et accepte la souris ou les raccourcis `C`, `E`, `F` et `J`.
+4. **Les caractères accentués du français manquaient dans la police :** `À`, `Ç`, `É` et `Ê` ont été ajoutés à la police bitmap latine. La traduction française couvre le menu, la saisie des dimensions, les messages d’état, la fenêtre de fin et les titres de fenêtre.
+5. **Une seconde souris restait visible au départ pendant l’animation :** la condition de rendu de l’image de départ a été corrigée ; l’animation et la fenêtre de fin n’affichent désormais la souris qu’à sa position actuelle.
+6. **`make clean` échouait lorsque `dist/assets` était un répertoire :** la règle supprime maintenant uniquement les cibles de compilation et DLL explicitement indiquées, au lieu d’appliquer `dist/*` aux répertoires.
+7. **La documentation n’était disponible que dans trop peu de langues :** des versions françaises et japonaises complètes ont été ajoutées aux versions chinoise et anglaise. Les quatre versions suivent la même structure et sont accessibles depuis la navigation linguistique en haut du fichier.
+8. **L’application ne proposait pas d’interface japonaise :** le japonais a été ajouté à l’énumération des langues, au menu, à la saisie des dimensions, aux messages d’état, à la fenêtre de fin et aux titres de fenêtre. L’écran des langues, le raccourci `J` et les glyphes bitmap kana et kanji nécessaires ont également été ajoutés.
+
+Ces modifications ont passé la compilation C11 sous Linux, `make test-generator`, `make test-ui` avec le pilote vidéo factice de SDL, les vérifications ASan/UBSan, la compilation croisée Windows avec MinGW-w64 et la création du répertoire de distribution. Les tests UI couvrent l’écran des langues, les clics après redimensionnement, l’annulation de l’animation et les deux actions de la fenêtre de fin.
 
 ### Notes de développement
 
@@ -623,7 +647,7 @@ Maze Solver は、**C と SDL2** で実装された迷路探索・アニメー�
 - 探索完了後に「もう一度」または初期画面へ戻る操作を選択可能
 - アニメーション中もウィンドウを閉じる操作に応答
 - 探索開始、新規迷路生成、言語選択、終了を行うスタート画面
-- OS のフォントに依存しない中国語・英語・フランス語の内蔵インターフェース
+- OS のフォントに依存しない中国語・英語・フランス語・日本語の内蔵インターフェース
 - メニューと迷路の比率およびクリック領域を保った自由なウィンドウサイズ変更
 - C によるランダムな完全迷路の生成
 
@@ -636,14 +660,14 @@ Maze Solver は、**C と SDL2** で実装された迷路探索・アニメー�
 | `src/maze.c` | 迷路ファイルの読み込み、形式検証、マーカー検索 |
 | `src/generator.c` | C 版ランダム完全迷路ジェネレーター |
 | `src/menu.c` | スタート画面、言語選択画面、ボタン描画、入力処理 |
-| `src/ui.c` | 中国語・英語・フランス語の UI テキストと UTF-8 ビットマップフォント描画 |
+| `src/ui.c` | 中国語・英語・フランス語・日本語の UI テキストと UTF-8 ビットマップフォント描画 |
 | `src/solver.c` | DFS、BFS、経路記録処理 |
 | `src/visualize.c` | 迷路描画と経路アニメーション |
 | `include/` | 各モジュールの公開ヘッダー |
 | `assets/maze.txt` | デフォルト迷路 |
 | `assets/mouse.bmp` | ネズミ画像 |
 | `assets/cheese.bmp` | チーズ画像 |
-| `assets/ui_font.hex` | UI に必要な中国語グリフのサブセット |
+| `assets/ui_font.hex` | UI に必要な中国語・日本語グリフのサブセット |
 | `tools/maze_gen.c` | C 版ジェネレーターのコマンドラインエントリーポイント |
 | `python/maze_gen.py` | 参考用に残された非推奨の旧 Python ジェネレーター |
 | `Makefile` | Linux/WSL ビルドおよび Windows クロスコンパイル規則 |
@@ -680,14 +704,14 @@ gcc -std=c11 -Wall -Wextra -Wpedantic src/*.c -Iinclude \
 
 - `开始`：現在の迷路を解いてアニメーションを再生
 - `新迷宫`：幅と高さの入力画面を開き、確定後に新しい迷路を生成して `assets/maze.txt` に保存
-- `语言`：専用の言語選択画面を開き、中文、English、Français から選択
+- `语言`：専用の言語選択画面を開き、中文、English、Français、日本語から選択
 - `退出`：アプリケーションを終了
 
 ネズミがチーズに到達すると、迷路の中央に完了ウィンドウが表示されます。「もう一度」を選ぶと現在の迷路を再生し、「終了」または `Esc` を選ぶと初期画面に戻ります。SDL ウィンドウを閉じた場合のみ、アプリケーション全体が終了します。
 
 サイズ入力画面では、`WIDTH` または `HEIGHT` をクリックして数字を入力すると現在値を置き換えられます。`Tab` で入力欄を切り替え、Backspace で数字を削除します。`Enter` または `GENERATE` で確定し、`Esc` または `CANCEL` でファイルを生成せずにメニューへ戻ります。幅と高さは `3` から `99` までの奇数である必要があり、両方を同時に `3` にすることはできません。
 
-ウィンドウは自由にサイズ変更できます。SDL2 はメニューと迷路の論理キャンバスを縦横比を保って拡大縮小し、比率が異なる場合は余白を追加します。メニューでは `Enter`/Space で開始、`N` で迷路生成、`L` で言語選択画面を開き、`Q`/`Esc` で終了します。言語画面では `C`、`E`、`F` で中国語、英語、フランス語を選択できます。アニメーション中に `Esc` を押すとメニューへ戻ります。
+ウィンドウは自由にサイズ変更できます。SDL2 はメニューと迷路の論理キャンバスを縦横比を保って拡大縮小し、比率が異なる場合は余白を追加します。メニューでは `Enter`/Space で開始、`N` で迷路生成、`L` で言語選択画面を開き、`Q`/`Esc` で終了します。言語画面では `C`、`E`、`F`、`J` で中国語、英語、フランス語、日本語を選択できます。アニメーション中に `Esc` を押すとメニューへ戻ります。
 
 ### Linux / WSL から Windows 版をクロスコンパイル
 
@@ -792,10 +816,18 @@ make test-ui
 
 ### 現在の開発状況と問題記録
 
-現在のアプリケーションには、分離された SDL ライフサイクル、C 版完全迷路ジェネレーター、4 ボタンのスタートメニュー、3 言語の選択、完了ダイアログ、サイズ変更可能な論理キャンバスが含まれています。以下の UI 問題は回帰テストの記録として残されています：
+以下は **2026-09-09** の開発中に発生し、対応した問題です：
 
-1. **修正済み：** `NEW MAZE` は寸法入力画面を開き、マウスによる入力欄の選択、数字入力、Backspace、`Tab` による切り替え、確定とキャンセル、および生成前の奇数範囲検証に対応しています。
-2. **修正済み：** サイズ変更後にボタンをクリックできなかった原因は、SDL がすでに変換したマウス座標を再変換していたことでした。現在は SDL が提供する論理イベント座標を直接使用し、非等比例リサイズ後のクリックを確認する回帰テストを追加しています。
+1. **迷路を解いた後に操作を選べなかった：** 以前は短時間停止した後、自動的にメニューへ戻っていました。現在は迷路中央の完了ダイアログで「もう一度」と「終了」を選択できます。前者は現在の迷路を再生し、後者は初期画面へ戻ります。`SDL_QUIT` は引き続きアプリケーション全体を終了します。
+2. **内蔵の英語ビットマップフォントで中国語を表示できなかった：** フォント描画をメニューモジュールから共通 UI モジュールへ分離し、UTF-8 デコードとプロジェクトに必要な中国語グリフのサブセットを追加しました。SDL_ttf や OS のフォントには依存しません。
+3. **英語の言語ボタン文字列がボタンからはみ出した：** `LANGUAGE ENGLISH` を `LANGUAGE` に短縮し、クリックすると専用の言語選択画面を開くようにしました。この画面では現在、中文、English、Français、日本語を選べ、現在の選択を表示し、マウスまたは `C`、`E`、`F`、`J` キーで切り替えられます。
+4. **フランス語に必要なアクセント付き文字がフォントになかった：** ラテンビットマップフォントに `À`、`Ç`、`É`、`Ê` を追加し、メニュー、寸法入力、状態メッセージ、完了ダイアログ、ウィンドウタイトルをフランス語化しました。
+5. **アニメーション中に開始地点へ別のネズミが残った：** 開始地点の画像を描画する条件を修正し、アニメーションと完了ダイアログでは現在位置のネズミだけを表示するようにしました。
+6. **`dist/assets` がディレクトリの場合に `make clean` が失敗した：** `dist/*` でディレクトリまで対象にせず、明示したビルド成果物と DLL のみを削除するようにクリーン規則を変更しました。
+7. **README の対応言語が不足していた：** 中国語版と英語版に加えて、完全なフランス語版と日本語版を追加しました。4 言語で同じ章構成を使用し、ファイル上部の言語ナビゲーションから移動できます。
+8. **アプリケーションに日本語 UI がなかった：** 言語列挙、メニュー、寸法入力、状態メッセージ、完了ダイアログ、ウィンドウタイトルに日本語を追加しました。言語選択画面、`J` ショートカット、必要な仮名・漢字ビットマップグリフも拡張しています。
+
+今回の変更は、Linux C11 ビルド、`make test-generator`、SDL dummy ビデオドライバーを使った `make test-ui`、ASan/UBSan、MinGW-w64 による Windows クロスビルド、配布ディレクトリのパッケージ作成で検証しました。UI テストでは言語選択画面、サイズ変更後のクリック、アニメーションのキャンセル、完了ダイアログの再生とメニュー復帰を確認しています。
 
 ### 開発上の注意
 

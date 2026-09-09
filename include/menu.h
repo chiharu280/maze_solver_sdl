@@ -29,7 +29,7 @@ typedef enum {
 /* Display the start screen until the user chooses an action. */
 MenuAction menu_run(AppContext* app, UiStatus status, UiLanguage* language);
 
-/* Display a separate screen for choosing Chinese, English, or French. */
+/* Display a separate screen for choosing Chinese, English, French, or Japanese. */
 LanguageSelectionResult menu_prompt_language(AppContext* app,
                                              UiLanguage* language);
 

@@ -5,7 +5,7 @@
 
 #include "ui.h"
 
-#define MAX_CJK_GLYPHS 96
+#define MAX_CJK_GLYPHS 192
 
 typedef struct {
     uint32_t codepoint;
@@ -158,13 +158,22 @@ const char* ui_status_text(UiLanguage language, UiStatus status) {
         "ÉCHEC DE CRÉATION", "CRÉATION ANNULÉE", "RETOUR AU MENU",
         "AUCUN CHEMIN"
     };
+    static const char* const japanese[] = {
+        "準備完了", "迷路の読み込みに失敗", "新しい迷路を生成しました",
+        "迷路の生成に失敗", "生成をキャンセルしました",
+        "メニューに戻りました", "経路が見つかりません"
+    };
     if (status < UI_STATUS_READY || status > UI_STATUS_NO_PATH_FOUND) {
         status = UI_STATUS_READY;
     }
     if (language == UI_LANGUAGE_CHINESE) {
         return chinese[status];
     }
-    return language == UI_LANGUAGE_FRENCH ? french[status] : english[status];
+    if (language == UI_LANGUAGE_FRENCH) {
+        return french[status];
+    }
+    return language == UI_LANGUAGE_JAPANESE ? japanese[status] :
+                                               english[status];
 }
 
 int ui_text_width(const char* text, int scale) {

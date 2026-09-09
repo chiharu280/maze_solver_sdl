@@ -115,7 +115,7 @@ int main(void) {
     CHECK(language == UI_LANGUAGE_ENGLISH,
           "进入语言选择界面前不得直接改变语言");
 
-    push_click(400, 387);
+    push_click(400, 330);
     CHECK(menu_prompt_language(&app, &language) ==
               LANGUAGE_SELECTION_SELECTED,
           "语言选择界面应允许选择法语");
@@ -136,11 +136,36 @@ int main(void) {
               "法语状态文字不得超出菜单画布");
     }
 
+    push_click(400, 419);
+    CHECK(menu_prompt_language(&app, &language) ==
+              LANGUAGE_SELECTION_SELECTED,
+          "语言选择界面应允许点击选择日语");
+    CHECK(language == UI_LANGUAGE_JAPANESE,
+          "选择日语后应保存日语设置");
+    CHECK(ui_text_width("日本語", 2) <= 400,
+          "日语名称不得超出语言选择框");
+    CHECK(ui_text_width("ネズミがチーズを見つけました", 2) <= 560,
+          "日语完成提示不得超出弹窗");
+    for (int status = UI_STATUS_READY; status <= UI_STATUS_NO_PATH_FOUND;
+         ++status) {
+        CHECK(ui_text_width(ui_status_text(UI_LANGUAGE_JAPANESE,
+                                           (UiStatus)status), 2) <= 800,
+              "日语状态文字不得超出菜单画布");
+    }
+
+    language = UI_LANGUAGE_FRENCH;
+    push_key(SDLK_j);
+    CHECK(menu_prompt_language(&app, &language) ==
+              LANGUAGE_SELECTION_SELECTED,
+          "语言选择界面应允许使用 J 键选择日语");
+    CHECK(language == UI_LANGUAGE_JAPANESE,
+          "J 键应切换到日语");
+
     push_key(SDLK_ESCAPE);
     CHECK(menu_prompt_language(&app, &language) ==
               LANGUAGE_SELECTION_CANCELLED,
           "Esc 应取消语言选择");
-    CHECK(language == UI_LANGUAGE_FRENCH,
+    CHECK(language == UI_LANGUAGE_JAPANESE,
           "取消语言选择不得改变当前语言");
     language = UI_LANGUAGE_ENGLISH;
 
@@ -196,9 +221,9 @@ int main(void) {
                                          (void*)&replay);
         CHECK(timer != 0, "应能创建完成弹窗测试定时器");
         CHECK(visualization_play_maze(&app, small_maze, path_x, path_y, 3,
-                                      UI_LANGUAGE_CHINESE) ==
+                                      UI_LANGUAGE_JAPANESE) ==
                   VISUALIZATION_REPLAY,
-              "完成弹窗的再来一次按钮应重新开始");
+              "日语完成弹窗的再来一次按钮应重新开始");
     }
     {
         const SDL_Point exit_button = {530, 360};
