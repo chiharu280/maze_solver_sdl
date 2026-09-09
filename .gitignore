@@ -8,5 +8,6 @@ build/
 *.dll
 *.so
 .vscode/
-assets/maze.txt
 .py
+docs/
+AGENTS.md
