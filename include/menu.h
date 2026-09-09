@@ -2,6 +2,7 @@
 #define MENU_H
 
 #include "app.h"
+#include "ui.h"
 
 typedef enum {
     MENU_ERROR = 0,
@@ -18,11 +19,11 @@ typedef enum {
 } MazeSizeResult;
 
 /* Display the start screen until the user chooses an action. */
-MenuAction menu_run(AppContext* app, const char* status_message);
+MenuAction menu_run(AppContext* app, UiStatus status, UiLanguage* language);
 
 /* Collect and validate odd maze dimensions before generating a new maze. */
 MazeSizeResult menu_prompt_maze_size(AppContext* app, int initial_width,
                                      int initial_height, int* width,
-                                     int* height);
+                                     int* height, UiLanguage language);
 
 #endif

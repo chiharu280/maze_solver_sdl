@@ -9,3 +9,4 @@ build/
 *.so
 .vscode/
 assets/maze.txt
+.py

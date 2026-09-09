@@ -17,8 +17,10 @@ Maze Solver 是一个使用 **C 和 SDL2** 编写的迷宫求解与动画可视�
 - 保留 DFS 求解器，供算法学习与比较使用
 - 使用 SDL2 绘制墙体、路径、老鼠和奶酪
 - 动画展示从起点到终点的移动过程
+- 求解完成后提供“再来一次”或返回初始界面的选择
 - 在动画期间保持窗口关闭事件可响应
-- 提供开始求解、生成新迷宫和退出游戏的开始界面
+- 提供开始求解、生成新迷宫、语言切换和退出游戏的开始界面
+- 内置中英文界面，不依赖操作系统字体
 - 窗口可自由缩放，菜单与迷宫保持正确比例和点击区域
 - 使用 C 随机生成新的完美迷宫
 
@@ -31,12 +33,14 @@ Maze Solver 是一个使用 **C 和 SDL2** 编写的迷宫求解与动画可视�
 | `src/maze.c` | 迷宫文件读取、格式校验和标记查找 |
 | `src/generator.c` | C 版随机完美迷宫生成器 |
 | `src/menu.c` | 开始界面、内置位图字体、按钮绘制与交互 |
+| `src/ui.c` | 中英文界面文本和 UTF-8 位图字体渲染 |
 | `src/solver.c` | DFS、BFS 与路径记录逻辑 |
 | `src/visualize.c` | 迷宫渲染和路径动画 |
 | `include/` | 各模块的公共头文件 |
 | `assets/maze.txt` | 默认迷宫 |
 | `assets/mouse.bmp` | 老鼠贴图 |
 | `assets/cheese.bmp` | 奶酪贴图 |
+| `assets/ui_font.hex` | 界面所需的中文字形子集 |
 | `tools/maze_gen.c` | C 版迷宫生成器命令行入口 |
 | `python/maze_gen.py` | 已废弃的旧版 Python 生成器（保留参考） |
 | `Makefile` | Linux/WSL 构建与 Windows 交叉编译规则 |
@@ -69,15 +73,18 @@ gcc -std=c11 -Wall -Wextra -Wpedantic src/*.c -Iinclude \
 ./maze_solver
 ```
 
-程序启动后显示包含三个按钮的开始界面：
+程序默认使用中文，并显示包含四个按钮的开始界面：
 
-- `START`：求解当前迷宫并播放动画，完成后返回菜单
-- `NEW MAZE`：打开宽高输入界面，确认后生成新迷宫并写入 `assets/maze.txt`
-- `QUIT`：退出游戏
+- `开始`：求解当前迷宫并播放动画
+- `新迷宫`：打开宽高输入界面，确认后生成新迷宫并写入 `assets/maze.txt`
+- `语言 中文`：在中文和英文之间切换，界面会立即更新
+- `退出`：退出游戏
+
+老鼠到达奶酪后，迷宫中央会显示完成窗口。选择“再来一次”会重新播放当前迷宫；选择“退出”或按 `Esc` 会返回初始界面。关闭 SDL 窗口才会退出整个应用。
 
 尺寸页面点击 `WIDTH` 或 `HEIGHT` 后直接输入数字即可替换原值，`Tab` 切换输入框，退格删除数字。按 `Enter` 或点击 `GENERATE` 确认；`Esc` 或 `CANCEL` 返回菜单且不生成文件。宽高须为 `3` 到 `99` 的奇数，不能同时为 `3`。
 
-窗口可以拖拽缩放。SDL2 会分别按照菜单和迷宫的逻辑画布等比例缩放，宽高比不同时自动留边。菜单支持 `Enter`/空格开始、`N` 生成迷宫、`Q`/`Esc` 退出；动画期间按 `Esc` 可返回菜单。
+窗口可以拖拽缩放。SDL2 会分别按照菜单和迷宫的逻辑画布等比例缩放，宽高比不同时自动留边。菜单支持 `Enter`/空格开始、`N` 生成迷宫、`L` 切换语言、`Q`/`Esc` 退出；动画期间按 `Esc` 可返回菜单。
 
 ### 从 Linux / WSL 交叉编译 Windows 版本
 
@@ -211,8 +218,10 @@ A recursive **depth-first search (DFS)** implementation is also kept in the proj
 - Retained DFS implementation for comparison
 - SDL2 rendering for walls, route, mouse, and cheese
 - Animated traversal from start to destination
+- Completion dialog with replay and return-to-menu actions
 - Responsive close events during animation
-- Start screen with solve, new-maze, and quit actions
+- Start screen with solve, new-maze, language, and quit actions
+- Built-in Chinese and English UI without a system-font dependency
 - Freely resizable window with correctly scaled screens and hit targets
 - C-based random perfect-maze generator
 
@@ -225,12 +234,14 @@ A recursive **depth-first search (DFS)** implementation is also kept in the proj
 | `src/maze.c` | Maze parsing, validation, and marker lookup |
 | `src/generator.c` | C random perfect-maze generator |
 | `src/menu.c` | Start screen, built-in bitmap font, button rendering, and input |
+| `src/ui.c` | Localized UI strings and UTF-8 bitmap-font rendering |
 | `src/solver.c` | DFS, BFS, and path storage |
 | `src/visualize.c` | Maze rendering and route animation |
 | `include/` | Public module headers |
 | `assets/maze.txt` | Default maze |
 | `assets/mouse.bmp` | Mouse sprite |
 | `assets/cheese.bmp` | Cheese sprite |
+| `assets/ui_font.hex` | Chinese glyph subset used by the UI |
 | `tools/maze_gen.c` | Command-line entry point for the C generator |
 | `python/maze_gen.py` | Deprecated legacy Python generator, retained for reference |
 | `Makefile` | Linux/WSL build and Windows cross-build rules |
@@ -263,15 +274,18 @@ gcc -std=c11 -Wall -Wextra -Wpedantic src/*.c -Iinclude \
 ./maze_solver
 ```
 
-The application opens with three menu buttons:
+The application defaults to Chinese and opens with four menu buttons:
 
-- `START`: solve and animate the current maze, then return to the menu
+- `START`: solve and animate the current maze
 - `NEW MAZE`: open the width/height input screen, then generate and write the confirmed maze to `assets/maze.txt`
+- `LANGUAGE ENGLISH`: switch between Chinese and English; the screen updates immediately
 - `QUIT`: exit the application
+
+When the mouse reaches the cheese, a centered completion dialog offers `PLAY AGAIN` to replay the current maze and `EXIT` to return to the initial menu. Closing the SDL window still exits the application.
 
 On the size screen, click `WIDTH` or `HEIGHT` and type digits to replace its value. Use `Tab` to switch fields and Backspace to delete digits. `Enter` or `GENERATE` confirms; `Esc` or `CANCEL` returns without generating a file. Both dimensions must be odd values from `3` to `99`, and cannot both be `3`.
 
-The window can be resized freely. SDL2 scales the menu and maze logical canvases proportionally and letterboxes them when their aspect ratios differ. Press `Enter`/Space to start, `N` for a new maze, and `Q`/`Esc` to quit from the menu. During animation, `Esc` returns to the menu.
+The window can be resized freely. SDL2 scales the menu and maze logical canvases proportionally and letterboxes them when their aspect ratios differ. Press `Enter`/Space to start, `N` for a new maze, `L` to switch language, and `Q`/`Esc` to quit from the menu. During animation, `Esc` returns to the menu.
 
 ### Cross-compile a Windows build from Linux / WSL
 

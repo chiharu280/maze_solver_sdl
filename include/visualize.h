@@ -3,10 +3,12 @@
 
 #include "app.h"
 #include "maze.h"
+#include "ui.h"
 
 typedef enum {
     VISUALIZATION_ERROR = 0,
     VISUALIZATION_FINISHED,
+    VISUALIZATION_REPLAY,
     VISUALIZATION_CANCELLED,
     VISUALIZATION_QUIT
 } VisualizationResult;
@@ -17,6 +19,6 @@ typedef enum {
  */
 VisualizationResult visualization_play_maze(
     AppContext* app, char maze[][MAX_COLS + 1], const int path_x[],
-    const int path_y[], int path_len);
+    const int path_y[], int path_len, UiLanguage language);
 
 #endif

@@ -39,10 +39,18 @@ static void push_text(const char* text) {
     CHECK(SDL_PushEvent(&event) == 1, "应能注入文本输入事件");
 }
 
+static Uint32 push_click_after_delay(Uint32 interval, void* parameter) {
+    const SDL_Point* point = parameter;
+    (void)interval;
+    push_click(point->x, point->y);
+    return 0;
+}
+
 static void test_resized_buttons(AppContext* app) {
     const int sizes[][2] = {{400, 300}, {1200, 600}, {600, 1000}};
-    const int button_y[] = {269, 364, 459};
+    const int button_y[] = {225, 305, 465};
     const MenuAction actions[] = {MENU_START, MENU_NEW_MAZE, MENU_QUIT};
+    UiLanguage language = UI_LANGUAGE_ENGLISH;
     for (size_t size = 0; size < sizeof(sizes) / sizeof(sizes[0]); ++size) {
         SDL_SetWindowSize(app->window, sizes[size][0], sizes[size][1]);
         SDL_PumpEvents();
@@ -52,7 +60,7 @@ static void test_resized_buttons(AppContext* app) {
              * coordinates that SDL delivers after filtering native events. */
             push_click(400, button_y[button]);
             push_key(SDLK_q); /* Fail rather than hang if a click is missed. */
-            CHECK(menu_run(app, "READY") == actions[button],
+            CHECK(menu_run(app, UI_STATUS_READY, &language) == actions[button],
                   "缩放后按钮应接收逻辑坐标点击");
             SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
         }
@@ -68,6 +76,7 @@ int main(void) {
     int logical_height = 0;
     int selected_width = 0;
     int selected_height = 0;
+    UiLanguage language = UI_LANGUAGE_ENGLISH;
 
     CHECK(app_init(&app), "应用上下文应能初始化");
     if (!app.renderer) {
@@ -78,8 +87,8 @@ int main(void) {
     CHECK((SDL_GetWindowFlags(app.window) & SDL_WINDOW_RESIZABLE) != 0,
           "窗口必须允许调整尺寸");
 
-    push_click(400, 265);
-    CHECK(menu_run(&app, "READY") == MENU_START,
+    push_click(400, 225);
+    CHECK(menu_run(&app, UI_STATUS_READY, &language) == MENU_START,
           "点击 START 按钮应开始求解");
     SDL_RenderGetLogicalSize(app.renderer, &logical_width, &logical_height);
     CHECK(logical_width == 800 && logical_height == 600,
@@ -89,16 +98,24 @@ int main(void) {
     SDL_PumpEvents();
     int new_maze_x;
     int new_maze_y;
-    SDL_RenderLogicalToWindow(app.renderer, 400.0f, 364.0f,
+    SDL_RenderLogicalToWindow(app.renderer, 400.0f, 305.0f,
                               &new_maze_x, &new_maze_y);
-    CHECK(new_maze_x != 400 || new_maze_y != 364,
+    CHECK(new_maze_x != 400 || new_maze_y != 305,
           "测试窗口尺寸必须实际改变坐标映射");
     /* SDL delivers real mouse events in renderer logical coordinates. */
-    push_click(400, 364);
-    CHECK(menu_run(&app, "READY") == MENU_NEW_MAZE,
+    push_click(400, 305);
+    CHECK(menu_run(&app, UI_STATUS_READY, &language) == MENU_NEW_MAZE,
           "缩放窗口后点击 NEW MAZE 仍应有效");
 
     test_resized_buttons(&app);
+
+    push_click(400, 385);
+    push_key(SDLK_q);
+    CHECK(menu_run(&app, UI_STATUS_READY, &language) == MENU_QUIT,
+          "语言按钮切换后菜单应继续响应事件");
+    CHECK(language == UI_LANGUAGE_CHINESE,
+          "语言按钮应在英文和中文之间切换");
+    language = UI_LANGUAGE_ENGLISH;
 
     push_text("50");
     push_key(SDLK_TAB);
@@ -108,14 +125,16 @@ int main(void) {
     push_text("51");
     push_key(SDLK_RETURN);
     CHECK(menu_prompt_maze_size(&app, 31, 21, &selected_width,
-                                &selected_height) == MAZE_SIZE_CONFIRMED,
+                                &selected_height, language) ==
+              MAZE_SIZE_CONFIRMED,
           "应拒绝偶数尺寸并允许修正后确认");
     CHECK(selected_width == 51 && selected_height == 41,
           "尺寸输入结果必须正确");
 
     push_key(SDLK_ESCAPE);
     CHECK(menu_prompt_maze_size(&app, 31, 21, &selected_width,
-                                &selected_height) == MAZE_SIZE_CANCELLED,
+                                &selected_height, language) ==
+              MAZE_SIZE_CANCELLED,
           "Esc 应取消尺寸输入");
     CHECK(selected_width == 51 && selected_height == 41,
           "取消不得改变已确认尺寸");
@@ -126,7 +145,8 @@ int main(void) {
     push_key(SDLK_RETURN);
     push_key(SDLK_ESCAPE);
     CHECK(menu_prompt_maze_size(&app, 31, 21, &selected_width,
-                                &selected_height) == MAZE_SIZE_CANCELLED,
+                                &selected_height, language) ==
+              MAZE_SIZE_CANCELLED,
           "3 x 3 必须被拒绝并允许取消");
 
     COLS = 5;
@@ -135,15 +155,37 @@ int main(void) {
     snprintf(small_maze[1], sizeof(small_maze[1]), "#S E#");
     snprintf(small_maze[2], sizeof(small_maze[2]), "#####");
     push_key(SDLK_ESCAPE);
-    CHECK(visualization_play_maze(&app, small_maze, path_x, path_y, 3) ==
+    CHECK(visualization_play_maze(&app, small_maze, path_x, path_y, 3,
+                                  language) ==
               VISUALIZATION_CANCELLED,
           "Esc 键应从动画返回菜单");
     SDL_RenderGetLogicalSize(app.renderer, &logical_width, &logical_height);
     CHECK(logical_width == 40 && logical_height == 24,
           "迷宫画布必须按网格尺寸设置并支持缩放");
 
+    {
+        const SDL_Point replay = {270, 360};
+        SDL_TimerID timer = SDL_AddTimer(150, push_click_after_delay,
+                                         (void*)&replay);
+        CHECK(timer != 0, "应能创建完成弹窗测试定时器");
+        CHECK(visualization_play_maze(&app, small_maze, path_x, path_y, 3,
+                                      UI_LANGUAGE_CHINESE) ==
+                  VISUALIZATION_REPLAY,
+              "完成弹窗的再来一次按钮应重新开始");
+    }
+    {
+        const SDL_Point exit_button = {530, 360};
+        SDL_TimerID timer = SDL_AddTimer(150, push_click_after_delay,
+                                         (void*)&exit_button);
+        CHECK(timer != 0, "应能创建完成弹窗退出测试定时器");
+        CHECK(visualization_play_maze(&app, small_maze, path_x, path_y, 3,
+                                      UI_LANGUAGE_ENGLISH) ==
+                  VISUALIZATION_FINISHED,
+              "完成弹窗的退出按钮应返回初始菜单");
+    }
+
     push_key(SDLK_q);
-    CHECK(menu_run(&app, "READY") == MENU_QUIT,
+    CHECK(menu_run(&app, UI_STATUS_READY, &language) == MENU_QUIT,
           "Q 键应退出游戏");
 
     app_shutdown(&app);
