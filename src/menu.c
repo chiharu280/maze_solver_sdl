@@ -29,9 +29,11 @@ static void set_menu_labels(MenuButton buttons[], UiLanguage language) {
                        japanese ? "開始" : "START";
     buttons[1].label = chinese ? "新迷宫" : french ? "NOUVEAU" :
                        japanese ? "新しい迷路" : "NEW MAZE";
-    buttons[2].label = chinese ? "语言" : french ? "LANGUE" :
+    buttons[2].label = chinese ? "设置" : french ? "RÉGLAGES" :
+                       japanese ? "設定" : "SETTINGS";
+    buttons[3].label = chinese ? "语言" : french ? "LANGUE" :
                        japanese ? "言語" : "LANGUAGE";
-    buttons[3].label = chinese ? "退出" : french ? "QUITTER" :
+    buttons[4].label = chinese ? "退出" : french ? "QUITTER" :
                        japanese ? "終了" : "QUIT";
 }
 
@@ -107,10 +109,11 @@ static void render_menu(AppContext* app, const MenuButton buttons[],
 
 MenuAction menu_run(AppContext* app, UiStatus status, UiLanguage* language) {
     MenuButton buttons[] = {
-        {{250, 195, 300, 60}, NULL, MENU_START},
-        {{250, 275, 300, 60}, NULL, MENU_NEW_MAZE},
-        {{250, 355, 300, 60}, NULL, MENU_LANGUAGE},
-        {{250, 435, 300, 60}, NULL, MENU_QUIT}
+        {{250, 170, 300, 52}, NULL, MENU_START},
+        {{250, 235, 300, 52}, NULL, MENU_NEW_MAZE},
+        {{250, 300, 300, 52}, NULL, MENU_SETTINGS},
+        {{250, 365, 300, 52}, NULL, MENU_LANGUAGE},
+        {{250, 430, 300, 52}, NULL, MENU_QUIT}
     };
     const size_t button_count = sizeof(buttons) / sizeof(buttons[0]);
 
@@ -137,6 +140,9 @@ MenuAction menu_run(AppContext* app, UiStatus status, UiLanguage* language) {
                 }
                 if (event.key.keysym.sym == SDLK_n) {
                     return MENU_NEW_MAZE;
+                }
+                if (event.key.keysym.sym == SDLK_s) {
+                    return MENU_SETTINGS;
                 }
                 if (event.key.keysym.sym == SDLK_l) {
                     return MENU_LANGUAGE;
@@ -305,6 +311,160 @@ LanguageSelectionResult menu_prompt_language(AppContext* app,
             }
         }
         render_language_prompt(app, hovered, *language);
+        SDL_Delay(16);
+    }
+}
+
+#define SETTINGS_SLIDER_X 200
+#define SETTINGS_SLIDER_Y 285
+#define SETTINGS_SLIDER_WIDTH 400
+#define SETTINGS_SLIDER_STEP (SETTINGS_SLIDER_WIDTH / 4)
+
+static int speed_level_from_x(int x) {
+    int level = (x - SETTINGS_SLIDER_X + SETTINGS_SLIDER_STEP / 2) /
+                    SETTINGS_SLIDER_STEP +
+                1;
+    if (level < 1) {
+        return 1;
+    }
+    return level > 5 ? 5 : level;
+}
+
+static void render_settings_prompt(AppContext* app, int speed_level,
+                                   int back_hovered, UiLanguage language) {
+    const SDL_Rect back_button = {280, 450, 240, 65};
+    const int chinese = language == UI_LANGUAGE_CHINESE;
+    const int french = language == UI_LANGUAGE_FRENCH;
+    const int japanese = language == UI_LANGUAGE_JAPANESE;
+    const int cjk = chinese || japanese;
+    const char* title = chinese ? "设置" : french ? "RÉGLAGES" :
+                        japanese ? "設定" : "SETTINGS";
+    const char* speed_label = chinese ? "老鼠速度" :
+                              french ? "VITESSE DE LA SOURIS" :
+                              japanese ? "ネズミの速度" : "MOUSE SPEED";
+    const char* slow_label = chinese ? "慢" : french ? "LENT" :
+                             japanese ? "遅い" : "SLOW";
+    const char* fast_label = chinese ? "快" : french ? "RAPIDE" :
+                             japanese ? "速い" : "FAST";
+    const char* back_label = chinese ? "返回" : french ? "RETOUR" :
+                             japanese ? "戻る" : "BACK";
+    int knob_x = SETTINGS_SLIDER_X + (speed_level - 1) *
+                                      SETTINGS_SLIDER_STEP;
+
+    SDL_SetWindowTitle(app->window, chinese ? "迷宫求解器 - 设置" :
+                      french ? "Labyrinthe - Réglages" :
+                      japanese ? "迷路ソルバー - 設定" :
+                                 "Maze Solver - Settings");
+    SDL_SetRenderDrawColor(app->renderer, 12, 18, 32, 255);
+    SDL_RenderClear(app->renderer);
+    ui_draw_text(app, title, MENU_WIDTH / 2, 65, cjk ? 4 : 7,
+                 (SDL_Color){97, 218, 251, 255});
+    ui_draw_text(app, speed_label, MENU_WIDTH / 2, 175, cjk ? 2 : 3,
+                 (SDL_Color){241, 245, 249, 255});
+
+    SDL_SetRenderDrawColor(app->renderer, 51, 65, 85, 255);
+    SDL_Rect track = {SETTINGS_SLIDER_X, SETTINGS_SLIDER_Y - 4,
+                      SETTINGS_SLIDER_WIDTH, 8};
+    SDL_RenderFillRect(app->renderer, &track);
+    SDL_SetRenderDrawColor(app->renderer, 37, 99, 235, 255);
+    SDL_Rect selected_track = {SETTINGS_SLIDER_X, SETTINGS_SLIDER_Y - 4,
+                               knob_x - SETTINGS_SLIDER_X, 8};
+    SDL_RenderFillRect(app->renderer, &selected_track);
+
+    for (int level = 1; level <= 5; ++level) {
+        int tick_x = SETTINGS_SLIDER_X + (level - 1) * SETTINGS_SLIDER_STEP;
+        SDL_Rect tick = {tick_x - 2, SETTINGS_SLIDER_Y - 10, 4, 20};
+        char number[2] = {(char)('0' + level), '\0'};
+        SDL_SetRenderDrawColor(app->renderer, 148, 163, 184, 255);
+        SDL_RenderFillRect(app->renderer, &tick);
+        ui_draw_text(app, number, tick_x, 320, 3,
+                     (SDL_Color){148, 163, 184, 255});
+    }
+
+    SDL_Rect knob = {knob_x - 12, SETTINGS_SLIDER_Y - 16, 24, 32};
+    SDL_SetRenderDrawColor(app->renderer, 96, 165, 250, 255);
+    SDL_RenderFillRect(app->renderer, &knob);
+    SDL_SetRenderDrawColor(app->renderer, 241, 245, 249, 255);
+    SDL_RenderDrawRect(app->renderer, &knob);
+
+    ui_draw_text(app, slow_label, SETTINGS_SLIDER_X, 365, cjk ? 2 : 3,
+                 (SDL_Color){100, 116, 139, 255});
+    ui_draw_text(app, fast_label, SETTINGS_SLIDER_X + SETTINGS_SLIDER_WIDTH,
+                 365, cjk ? 2 : 3, (SDL_Color){100, 116, 139, 255});
+
+    SDL_SetRenderDrawColor(app->renderer, back_hovered ? 37 : 30,
+                           back_hovered ? 99 : 41,
+                           back_hovered ? 235 : 59, 255);
+    SDL_RenderFillRect(app->renderer, &back_button);
+    SDL_SetRenderDrawColor(app->renderer, 96, 165, 250, 255);
+    SDL_RenderDrawRect(app->renderer, &back_button);
+    ui_draw_text(app, back_label, MENU_WIDTH / 2,
+                 back_button.y + (cjk ? 16 : 19), cjk ? 2 : 4,
+                 (SDL_Color){241, 245, 249, 255});
+    SDL_RenderPresent(app->renderer);
+}
+
+SettingsResult menu_prompt_settings(AppContext* app, int* speed_level,
+                                    UiLanguage language) {
+    const SDL_Rect slider_hitbox = {
+        SETTINGS_SLIDER_X - 20, SETTINGS_SLIDER_Y - 35,
+        SETTINGS_SLIDER_WIDTH + 40, 70
+    };
+    const SDL_Rect back_button = {280, 450, 240, 65};
+    int dragging = 0;
+    int back_hovered = 0;
+
+    if (!app || !app->renderer || !speed_level || *speed_level < 1 ||
+        *speed_level > 5 ||
+        !app_set_logical_size(app, MENU_WIDTH, MENU_HEIGHT)) {
+        return SETTINGS_ERROR;
+    }
+    for (;;) {
+        SDL_Event event;
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) {
+                return SETTINGS_QUIT;
+            }
+            if (event.type == SDL_KEYDOWN) {
+                SDL_Keycode key = event.key.keysym.sym;
+                if (key == SDLK_ESCAPE || key == SDLK_RETURN ||
+                    key == SDLK_KP_ENTER) {
+                    return SETTINGS_DONE;
+                }
+                if (key == SDLK_LEFT && *speed_level > 1) {
+                    --*speed_level;
+                } else if (key == SDLK_RIGHT && *speed_level < 5) {
+                    ++*speed_level;
+                } else if (key >= SDLK_1 && key <= SDLK_5) {
+                    *speed_level = (int)(key - SDLK_0);
+                }
+            }
+            if (event.type == SDL_MOUSEBUTTONDOWN &&
+                event.button.button == SDL_BUTTON_LEFT) {
+                if (point_in_rect((float)event.button.x,
+                                  (float)event.button.y, &back_button)) {
+                    return SETTINGS_DONE;
+                }
+                if (point_in_rect((float)event.button.x,
+                                  (float)event.button.y, &slider_hitbox)) {
+                    dragging = 1;
+                    *speed_level = speed_level_from_x(event.button.x);
+                }
+            }
+            if (event.type == SDL_MOUSEMOTION) {
+                back_hovered = point_in_rect((float)event.motion.x,
+                                             (float)event.motion.y,
+                                             &back_button);
+                if (dragging) {
+                    *speed_level = speed_level_from_x(event.motion.x);
+                }
+            }
+            if (event.type == SDL_MOUSEBUTTONUP &&
+                event.button.button == SDL_BUTTON_LEFT) {
+                dragging = 0;
+            }
+        }
+        render_settings_prompt(app, *speed_level, back_hovered, language);
         SDL_Delay(16);
     }
 }

@@ -32,6 +32,24 @@ static void push_click(int x, int y) {
     CHECK(SDL_PushEvent(&event) == 1, "应能注入鼠标事件");
 }
 
+static void push_motion(int x, int y) {
+    SDL_Event event = {0};
+    event.type = SDL_MOUSEMOTION;
+    event.motion.state = SDL_BUTTON_LMASK;
+    event.motion.x = x;
+    event.motion.y = y;
+    CHECK(SDL_PushEvent(&event) == 1, "应能注入鼠标拖动事件");
+}
+
+static void push_release(int x, int y) {
+    SDL_Event event = {0};
+    event.type = SDL_MOUSEBUTTONUP;
+    event.button.button = SDL_BUTTON_LEFT;
+    event.button.x = x;
+    event.button.y = y;
+    CHECK(SDL_PushEvent(&event) == 1, "应能注入鼠标释放事件");
+}
+
 static void push_text(const char* text) {
     SDL_Event event = {0};
     event.type = SDL_TEXTINPUT;
@@ -48,7 +66,7 @@ static Uint32 push_click_after_delay(Uint32 interval, void* parameter) {
 
 static void test_resized_buttons(AppContext* app) {
     const int sizes[][2] = {{400, 300}, {1200, 600}, {600, 1000}};
-    const int button_y[] = {225, 305, 465};
+    const int button_y[] = {196, 261, 456};
     const MenuAction actions[] = {MENU_START, MENU_NEW_MAZE, MENU_QUIT};
     UiLanguage language = UI_LANGUAGE_ENGLISH;
     for (size_t size = 0; size < sizeof(sizes) / sizeof(sizes[0]); ++size) {
@@ -76,6 +94,7 @@ int main(void) {
     int logical_height = 0;
     int selected_width = 0;
     int selected_height = 0;
+    int speed_level = 3;
     UiLanguage language = UI_LANGUAGE_ENGLISH;
 
     CHECK(app_init(&app), "应用上下文应能初始化");
@@ -87,7 +106,7 @@ int main(void) {
     CHECK((SDL_GetWindowFlags(app.window) & SDL_WINDOW_RESIZABLE) != 0,
           "窗口必须允许调整尺寸");
 
-    push_click(400, 225);
+    push_click(400, 196);
     CHECK(menu_run(&app, UI_STATUS_READY, &language) == MENU_START,
           "点击 START 按钮应开始求解");
     SDL_RenderGetLogicalSize(app.renderer, &logical_width, &logical_height);
@@ -98,16 +117,36 @@ int main(void) {
     SDL_PumpEvents();
     int new_maze_x;
     int new_maze_y;
-    SDL_RenderLogicalToWindow(app.renderer, 400.0f, 305.0f,
+    SDL_RenderLogicalToWindow(app.renderer, 400.0f, 261.0f,
                               &new_maze_x, &new_maze_y);
-    CHECK(new_maze_x != 400 || new_maze_y != 305,
+    CHECK(new_maze_x != 400 || new_maze_y != 261,
           "测试窗口尺寸必须实际改变坐标映射");
     /* SDL delivers real mouse events in renderer logical coordinates. */
-    push_click(400, 305);
+    push_click(400, 261);
     CHECK(menu_run(&app, UI_STATUS_READY, &language) == MENU_NEW_MAZE,
           "缩放窗口后点击 NEW MAZE 仍应有效");
 
     test_resized_buttons(&app);
+
+    push_click(400, 326);
+    CHECK(menu_run(&app, UI_STATUS_READY, &language) == MENU_SETTINGS,
+          "设置按钮应进入速度设置界面");
+    push_click(200, 285);
+    push_motion(600, 285);
+    push_release(600, 285);
+    push_click(400, 480);
+    CHECK(menu_prompt_settings(&app, &speed_level, language) == SETTINGS_DONE,
+          "设置界面返回按钮应回到菜单");
+    CHECK(speed_level == 5, "拖动速度条应能选择最快的第 5 档");
+    CHECK(visualization_delay_for_speed(1) >
+              visualization_delay_for_speed(2) &&
+          visualization_delay_for_speed(2) >
+              visualization_delay_for_speed(3) &&
+          visualization_delay_for_speed(3) >
+              visualization_delay_for_speed(4) &&
+          visualization_delay_for_speed(4) >
+              visualization_delay_for_speed(5),
+          "速度档位越高，动画帧延迟必须越短");
 
     push_click(400, 385);
     CHECK(menu_run(&app, UI_STATUS_READY, &language) == MENU_LANGUAGE,
@@ -208,7 +247,7 @@ int main(void) {
     snprintf(small_maze[2], sizeof(small_maze[2]), "#####");
     push_key(SDLK_ESCAPE);
     CHECK(visualization_play_maze(&app, small_maze, path_x, path_y, 3,
-                                  language) ==
+                                  language, 5) ==
               VISUALIZATION_CANCELLED,
           "Esc 键应从动画返回菜单");
     SDL_RenderGetLogicalSize(app.renderer, &logical_width, &logical_height);
@@ -221,7 +260,7 @@ int main(void) {
                                          (void*)&replay);
         CHECK(timer != 0, "应能创建完成弹窗测试定时器");
         CHECK(visualization_play_maze(&app, small_maze, path_x, path_y, 3,
-                                      UI_LANGUAGE_JAPANESE) ==
+                                      UI_LANGUAGE_JAPANESE, 5) ==
                   VISUALIZATION_REPLAY,
               "日语完成弹窗的再来一次按钮应重新开始");
     }
@@ -231,7 +270,7 @@ int main(void) {
                                          (void*)&exit_button);
         CHECK(timer != 0, "应能创建完成弹窗退出测试定时器");
         CHECK(visualization_play_maze(&app, small_maze, path_x, path_y, 3,
-                                      UI_LANGUAGE_FRENCH) ==
+                                      UI_LANGUAGE_FRENCH, 5) ==
                   VISUALIZATION_FINISHED,
               "法语完成弹窗的退出按钮应返回初始菜单");
     }

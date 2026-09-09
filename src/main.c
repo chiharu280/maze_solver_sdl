@@ -35,7 +35,8 @@ static int regenerate_maze(int width, int height) {
 }
 
 static VisualizationResult solve_and_visualize(AppContext* app,
-                                               UiLanguage language) {
+                                               UiLanguage language,
+                                               int speed_level) {
     int start_x;
     int start_y;
 
@@ -45,7 +46,7 @@ static VisualizationResult solve_and_visualize(AppContext* app,
     }
 
     return visualization_play_maze(app, maze, path_x, path_y, path_len,
-                                   language);
+                                   language, speed_level);
 }
 
 int main(int argc, char* argv[]) {
@@ -55,6 +56,7 @@ int main(int argc, char* argv[]) {
     int maze_is_ready = load_maze_from_file(MAZE_FILE);
     int running = 1;
     int exit_code = 0;
+    int speed_level = 3;
     UiLanguage language = UI_LANGUAGE_CHINESE;
     UiStatus status = maze_is_ready ? UI_STATUS_READY :
                                       UI_STATUS_MAZE_LOAD_FAILED;
@@ -76,7 +78,8 @@ int main(int argc, char* argv[]) {
             }
 
             do {
-                visualization_result = solve_and_visualize(&app, language);
+                visualization_result = solve_and_visualize(
+                    &app, language, speed_level);
             } while (visualization_result == VISUALIZATION_REPLAY);
 
             switch (visualization_result) {
@@ -128,6 +131,19 @@ int main(int argc, char* argv[]) {
             if (language_result == LANGUAGE_SELECTION_QUIT) {
                 running = 0;
             } else if (language_result == LANGUAGE_SELECTION_ERROR) {
+                exit_code = 1;
+                running = 0;
+            }
+            break;
+        }
+
+        case MENU_SETTINGS:
+        {
+            SettingsResult settings_result = menu_prompt_settings(
+                &app, &speed_level, language);
+            if (settings_result == SETTINGS_QUIT) {
+                running = 0;
+            } else if (settings_result == SETTINGS_ERROR) {
                 exit_code = 1;
                 running = 0;
             }

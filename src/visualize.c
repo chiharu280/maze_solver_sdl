@@ -6,7 +6,6 @@
 #include "visualize.h"
 
 #define TILE_SIZE 8
-#define ANIMATION_DELAY_MS 25
 #define DIALOG_WIDTH 800
 #define DIALOG_HEIGHT 600
 
@@ -99,6 +98,16 @@ static VisualizationResult map_wait_result(WaitResult result) {
         return VISUALIZATION_CANCELLED;
     }
     return VISUALIZATION_FINISHED;
+}
+
+Uint32 visualization_delay_for_speed(int speed_level) {
+    static const Uint32 delays[] = {120, 75, 40, 20, 8};
+    if (speed_level < 1) {
+        speed_level = 1;
+    } else if (speed_level > 5) {
+        speed_level = 5;
+    }
+    return delays[speed_level - 1];
 }
 
 static int point_in_rect(int x, int y, const SDL_Rect* rect) {
@@ -253,7 +262,7 @@ static VisualizationResult show_completion_dialog(
 
 VisualizationResult visualization_play_maze(
     AppContext* app, char maze[][MAX_COLS + 1], const int path_x[],
-    const int path_y[], int path_len, UiLanguage language) {
+    const int path_y[], int path_len, UiLanguage language, int speed_level) {
     int revealed[MAX_ROWS][MAX_COLS] = {{0}};
 
     if (!app || !app->renderer || !app->mouse_texture ||
@@ -278,7 +287,8 @@ VisualizationResult visualization_play_maze(
         }
 
         render_maze_frame(app, maze, revealed, path_x[i], path_y[i]);
-        WaitResult wait_result = wait_with_events(ANIMATION_DELAY_MS);
+        WaitResult wait_result = wait_with_events(
+            visualization_delay_for_speed(speed_level));
         if (wait_result != WAIT_FINISHED) {
             return map_wait_result(wait_result);
         }

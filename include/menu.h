@@ -8,6 +8,7 @@ typedef enum {
     MENU_ERROR = 0,
     MENU_START,
     MENU_NEW_MAZE,
+    MENU_SETTINGS,
     MENU_LANGUAGE,
     MENU_QUIT
 } MenuAction;
@@ -26,12 +27,22 @@ typedef enum {
     LANGUAGE_SELECTION_QUIT
 } LanguageSelectionResult;
 
+typedef enum {
+    SETTINGS_ERROR = 0,
+    SETTINGS_DONE,
+    SETTINGS_QUIT
+} SettingsResult;
+
 /* Display the start screen until the user chooses an action. */
 MenuAction menu_run(AppContext* app, UiStatus status, UiLanguage* language);
 
 /* Display a separate screen for choosing Chinese, English, French, or Japanese. */
 LanguageSelectionResult menu_prompt_language(AppContext* app,
                                              UiLanguage* language);
+
+/* Adjust the mouse animation speed from level 1 (slow) to 5 (fast). */
+SettingsResult menu_prompt_settings(AppContext* app, int* speed_level,
+                                    UiLanguage language);
 
 /* Collect and validate odd maze dimensions before generating a new maze. */
 MazeSizeResult menu_prompt_maze_size(AppContext* app, int initial_width,

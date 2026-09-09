@@ -17,9 +17,10 @@ Maze Solver 是一个使用 **C 和 SDL2** 编写的迷宫求解与动画可视�
 - 保留 DFS 求解器，供算法学习与比较使用
 - 使用 SDL2 绘制墙体、路径、老鼠和奶酪
 - 动画展示从起点到终点的移动过程
+- 支持五档老鼠动画速度，`1` 最慢、`5` 最快
 - 求解完成后提供“再来一次”或返回初始界面的选择
 - 在动画期间保持窗口关闭事件可响应
-- 提供开始求解、生成新迷宫、语言切换和退出游戏的开始界面
+- 提供开始求解、生成新迷宫、速度设置、语言切换和退出游戏的开始界面
 - 内置中文、英文、法文和日文界面，不依赖操作系统字体
 - 窗口可自由缩放，菜单与迷宫保持正确比例和点击区域
 - 使用 C 随机生成新的完美迷宫
@@ -32,7 +33,7 @@ Maze Solver 是一个使用 **C 和 SDL2** 编写的迷宫求解与动画可视�
 | `src/app.c` | SDL2 窗口、渲染器、贴图及应用级资源生命周期 |
 | `src/maze.c` | 迷宫文件读取、格式校验和标记查找 |
 | `src/generator.c` | C 版随机完美迷宫生成器 |
-| `src/menu.c` | 开始界面、语言选择界面、按钮绘制与交互 |
+| `src/menu.c` | 开始界面、设置界面、语言选择界面、按钮绘制与交互 |
 | `src/ui.c` | 中英法日界面文本和 UTF-8 位图字体渲染 |
 | `src/solver.c` | DFS、BFS 与路径记录逻辑 |
 | `src/visualize.c` | 迷宫渲染和路径动画 |
@@ -73,18 +74,21 @@ gcc -std=c11 -Wall -Wextra -Wpedantic src/*.c -Iinclude \
 ./maze_solver
 ```
 
-程序默认使用中文，并显示包含四个按钮的开始界面：
+程序默认使用中文，并显示包含五个按钮的开始界面：
 
 - `开始`：求解当前迷宫并播放动画
 - `新迷宫`：打开宽高输入界面，确认后生成新迷宫并写入 `assets/maze.txt`
+- `设置`：打开速度设置界面
 - `语言`：进入独立语言选择页，可选择中文、English、Français 或日本語
 - `退出`：退出游戏
+
+速度设置页提供 `1` 到 `5` 五个档位的拖动条，`1` 最慢，`5` 最快，默认值为 `3`。可以点击或拖动滑块，也可以使用左右方向键或数字键 `1`–`5` 调整；设置在本次程序运行期间保持有效，并直接决定路径动画每一步的等待时间。
 
 老鼠到达奶酪后，迷宫中央会显示完成窗口。选择“再来一次”会重新播放当前迷宫；选择“退出”或按 `Esc` 会返回初始界面。关闭 SDL 窗口才会退出整个应用。
 
 尺寸页面点击 `WIDTH` 或 `HEIGHT` 后直接输入数字即可替换原值，`Tab` 切换输入框，退格删除数字。按 `Enter` 或点击 `GENERATE` 确认；`Esc` 或 `CANCEL` 返回菜单且不生成文件。宽高须为 `3` 到 `99` 的奇数，不能同时为 `3`。
 
-窗口可以拖拽缩放。SDL2 会分别按照菜单和迷宫的逻辑画布等比例缩放，宽高比不同时自动留边。菜单支持 `Enter`/空格开始、`N` 生成迷宫、`L` 打开语言选择页、`Q`/`Esc` 退出；语言页也可按 `C`、`E`、`F`、`J` 选择中文、英文、法文、日文。动画期间按 `Esc` 可返回菜单。
+窗口可以拖拽缩放。SDL2 会分别按照菜单和迷宫的逻辑画布等比例缩放，宽高比不同时自动留边。菜单支持 `Enter`/空格开始、`N` 生成迷宫、`S` 打开设置、`L` 打开语言选择页、`Q`/`Esc` 退出；语言页也可按 `C`、`E`、`F`、`J` 选择中文、英文、法文、日文。动画期间按 `Esc` 可返回菜单。
 
 ### 从 Linux / WSL 交叉编译 Windows 版本
 
@@ -199,8 +203,9 @@ make test-ui
 6. **`make clean` 遇到 `dist/assets` 目录时失败：** 清理规则改为只删除明确的构建目标和 DLL，不再用 `dist/*` 匹配目录。
 7. **文档语言不足：** README 在中英文基础上新增了完整法语和日语版本，四个版本保持相同章节结构，并加入顶部语言导航。
 8. **程序缺少日语界面：** 在语言枚举、菜单、尺寸输入、状态提示、完成弹窗和窗口标题中加入日语，并扩展语言选择页、`J` 快捷键及所需的假名和汉字位图。
+9. **老鼠移动速度固定：** 主菜单新增“设置”入口，设置页提供 `1` 到 `5` 的五档滑块和键盘控制。动画模块将档位映射为逐级缩短的帧延迟，因此高档位移动更快；默认使用第 `3` 档。
 
-本轮修改已通过 Linux C11 编译、`make test-generator`、SDL dummy 驱动下的 `make test-ui`、ASan/UBSan 检查、MinGW-w64 Windows 交叉编译和发行目录打包。UI 测试覆盖语言页面、缩放点击、动画取消，以及完成弹窗的重播和返回菜单操作。
+本轮修改已通过 Linux C11 编译、`make test-generator`、SDL dummy 驱动下的 `make test-ui`、ASan/UBSan 检查、MinGW-w64 Windows 交叉编译和发行目录打包。UI 测试覆盖语言页面、速度滑块、缩放点击、动画取消，以及完成弹窗的重播和返回菜单操作。
 
 ### 开发约定
 
@@ -226,9 +231,10 @@ A recursive **depth-first search (DFS)** implementation is also kept in the proj
 - Retained DFS implementation for comparison
 - SDL2 rendering for walls, route, mouse, and cheese
 - Animated traversal from start to destination
+- Five mouse-animation speed levels, from `1` (slowest) to `5` (fastest)
 - Completion dialog with replay and return-to-menu actions
 - Responsive close events during animation
-- Start screen with solve, new-maze, language, and quit actions
+- Start screen with solve, new-maze, settings, language, and quit actions
 - Built-in Chinese, English, French, and Japanese UI without a system-font dependency
 - Freely resizable window with correctly scaled screens and hit targets
 - C-based random perfect-maze generator
@@ -241,7 +247,7 @@ A recursive **depth-first search (DFS)** implementation is also kept in the proj
 | `src/app.c` | SDL2 window, renderer, textures, and application resource lifetime |
 | `src/maze.c` | Maze parsing, validation, and marker lookup |
 | `src/generator.c` | C random perfect-maze generator |
-| `src/menu.c` | Start screen, language selection, button rendering, and input |
+| `src/menu.c` | Start screen, settings, language selection, button rendering, and input |
 | `src/ui.c` | Chinese, English, French, and Japanese UI strings and bitmap-font rendering |
 | `src/solver.c` | DFS, BFS, and path storage |
 | `src/visualize.c` | Maze rendering and route animation |
@@ -282,18 +288,21 @@ gcc -std=c11 -Wall -Wextra -Wpedantic src/*.c -Iinclude \
 ./maze_solver
 ```
 
-The application defaults to Chinese and opens with four menu buttons:
+The application defaults to Chinese and opens with five menu buttons:
 
 - `START`: solve and animate the current maze
 - `NEW MAZE`: open the width/height input screen, then generate and write the confirmed maze to `assets/maze.txt`
+- `SETTINGS`: open the animation-speed settings screen
 - `LANGUAGE`: open a separate screen and choose Chinese, English, French, or Japanese
 - `QUIT`: exit the application
+
+The settings screen provides five slider positions from `1` to `5`, where `1` is the slowest, `5` is the fastest, and `3` is the default. Click or drag the slider, use Left/Right, or press a number key from `1` through `5`. The selected value remains active for the current application session and directly controls the delay between path-animation steps.
 
 When the mouse reaches the cheese, a centered completion dialog offers `PLAY AGAIN` to replay the current maze and `EXIT` to return to the initial menu. Closing the SDL window still exits the application.
 
 On the size screen, click `WIDTH` or `HEIGHT` and type digits to replace its value. Use `Tab` to switch fields and Backspace to delete digits. `Enter` or `GENERATE` confirms; `Esc` or `CANCEL` returns without generating a file. Both dimensions must be odd values from `3` to `99`, and cannot both be `3`.
 
-The window can be resized freely. SDL2 scales the menu and maze logical canvases proportionally and letterboxes them when their aspect ratios differ. Press `Enter`/Space to start, `N` for a new maze, `L` to open language selection, and `Q`/`Esc` to quit from the menu. On the language screen, `C`, `E`, `F`, and `J` select Chinese, English, French, and Japanese. During animation, `Esc` returns to the menu.
+The window can be resized freely. SDL2 scales the menu and maze logical canvases proportionally and letterboxes them when their aspect ratios differ. Press `Enter`/Space to start, `N` for a new maze, `S` for settings, `L` to open language selection, and `Q`/`Esc` to quit from the menu. On the language screen, `C`, `E`, `F`, and `J` select Chinese, English, French, and Japanese. During animation, `Esc` returns to the menu.
 
 ### Cross-compile a Windows build from Linux / WSL
 
@@ -408,8 +417,9 @@ The following problems were encountered and addressed during development on **20
 6. **`make clean` failed when `dist/assets` was a directory:** The cleanup rule now removes only explicit build targets and DLL files instead of matching directories with `dist/*`.
 7. **Documentation was available in too few languages:** Complete French and Japanese README sections were added alongside Chinese and English. All four versions use the same section structure and are linked from the language navigation at the top.
 8. **The application had no Japanese UI:** Japanese was added to the language enum, menu, dimension input, status messages, completion dialog, and window titles. The language screen, `J` shortcut, and required kana and kanji bitmap glyphs were added as well.
+9. **The mouse always moved at a fixed speed:** A `SETTINGS` entry now opens a five-position slider with keyboard controls. The animation layer maps levels `1` through `5` to progressively shorter frame delays, so higher levels move faster; level `3` is the default.
 
-This work passed the Linux C11 build, `make test-generator`, `make test-ui` with SDL’s dummy video driver, ASan/UBSan checks, the MinGW-w64 Windows cross-build, and release-directory packaging. UI coverage includes the language screen, resized clicks, animation cancellation, and both completion-dialog actions.
+This work passed the Linux C11 build, `make test-generator`, `make test-ui` with SDL’s dummy video driver, ASan/UBSan checks, the MinGW-w64 Windows cross-build, and release-directory packaging. UI coverage includes the language screen, speed slider, resized clicks, animation cancellation, and both completion-dialog actions.
 
 ### Development notes
 
@@ -435,9 +445,10 @@ Une implémentation récursive de la **recherche en profondeur (DFS)** est égal
 - Conservation du solveur DFS pour l’apprentissage et la comparaison
 - Rendu SDL2 des murs, du chemin, de la souris et du fromage
 - Animation du déplacement du départ jusqu’à l’arrivée
+- Cinq niveaux de vitesse d’animation, de `1` (le plus lent) à `5` (le plus rapide)
 - Choix entre rejouer et revenir à l’écran initial après la résolution
 - Prise en charge de la fermeture de la fenêtre pendant l’animation
-- Écran d’accueil permettant de lancer la résolution, créer un labyrinthe, choisir la langue ou quitter
+- Écran d’accueil permettant de lancer la résolution, créer un labyrinthe, régler la vitesse, choisir la langue ou quitter
 - Interface intégrée en chinois, anglais, français et japonais, sans dépendance aux polices du système
 - Fenêtre librement redimensionnable avec conservation des proportions et des zones cliquables
 - Génération aléatoire de labyrinthes parfaits en C
@@ -450,7 +461,7 @@ Une implémentation récursive de la **recherche en profondeur (DFS)** est égal
 | `src/app.c` | Fenêtre SDL2, moteur de rendu, textures et cycle de vie des ressources de l’application |
 | `src/maze.c` | Lecture du fichier, validation du format et recherche des marqueurs |
 | `src/generator.c` | Générateur aléatoire de labyrinthes parfaits en C |
-| `src/menu.c` | Écran d’accueil, sélection de la langue, rendu des boutons et interactions |
+| `src/menu.c` | Écran d’accueil, réglages, sélection de la langue, rendu des boutons et interactions |
 | `src/ui.c` | Textes chinois, anglais, français et japonais et rendu de la police bitmap UTF-8 |
 | `src/solver.c` | Solveurs DFS et BFS et stockage du chemin |
 | `src/visualize.c` | Rendu du labyrinthe et animation du chemin |
@@ -491,18 +502,21 @@ gcc -std=c11 -Wall -Wextra -Wpedantic src/*.c -Iinclude \
 ./maze_solver
 ```
 
-L’application utilise le chinois par défaut et affiche un écran d’accueil comportant quatre boutons :
+L’application utilise le chinois par défaut et affiche un écran d’accueil comportant cinq boutons :
 
 - `开始` : résoudre et animer le labyrinthe actuel
 - `新迷宫` : ouvrir l’écran de saisie des dimensions, puis générer le labyrinthe confirmé dans `assets/maze.txt`
+- `设置` : ouvrir l’écran de réglage de la vitesse d’animation
 - `语言` : ouvrir une page séparée permettant de choisir 中文, English, Français ou 日本語
 - `退出` : quitter l’application
+
+L’écran des réglages propose cinq positions de `1` à `5`, où `1` est la plus lente, `5` la plus rapide et `3` la valeur par défaut. Le niveau peut être choisi en cliquant ou en faisant glisser le curseur, avec les touches Gauche/Droite ou avec les chiffres `1` à `5`. La valeur reste active pendant la session actuelle et contrôle directement le délai entre les étapes de l’animation.
 
 Lorsque la souris atteint le fromage, une fenêtre de fin apparaît au centre du labyrinthe. `REJOUER` relance l’animation du labyrinthe actuel ; `QUITTER` ou `Esc` revient à l’écran initial. Seule la fermeture de la fenêtre SDL quitte entièrement l’application.
 
 Sur l’écran des dimensions, cliquez sur `LARGEUR` ou `HAUTEUR`, puis saisissez des chiffres pour remplacer la valeur. `Tab` change de champ et Retour arrière supprime un chiffre. `Entrée` ou `CRÉER` confirme ; `Esc` ou `ANNULER` revient au menu sans créer de fichier. Les deux dimensions doivent être des nombres impairs compris entre `3` et `99`, et ne peuvent pas être toutes les deux égales à `3`.
 
-La fenêtre peut être librement redimensionnée. SDL2 redimensionne proportionnellement les canevas logiques du menu et du labyrinthe, avec des bandes lorsque leurs proportions diffèrent. Dans le menu, `Entrée`/Espace lance la résolution, `N` crée un labyrinthe, `L` ouvre le choix de la langue et `Q`/`Esc` quitte. Sur l’écran des langues, `C`, `E`, `F` et `J` sélectionnent le chinois, l’anglais, le français et le japonais. Pendant l’animation, `Esc` revient au menu.
+La fenêtre peut être librement redimensionnée. SDL2 redimensionne proportionnellement les canevas logiques du menu et du labyrinthe, avec des bandes lorsque leurs proportions diffèrent. Dans le menu, `Entrée`/Espace lance la résolution, `N` crée un labyrinthe, `S` ouvre les réglages, `L` ouvre le choix de la langue et `Q`/`Esc` quitte. Sur l’écran des langues, `C`, `E`, `F` et `J` sélectionnent le chinois, l’anglais, le français et le japonais. Pendant l’animation, `Esc` revient au menu.
 
 ### Compilation croisée pour Windows depuis Linux / WSL
 
@@ -617,8 +631,9 @@ Les problèmes suivants ont été rencontrés et corrigés pendant le développe
 6. **`make clean` échouait lorsque `dist/assets` était un répertoire :** la règle supprime maintenant uniquement les cibles de compilation et DLL explicitement indiquées, au lieu d’appliquer `dist/*` aux répertoires.
 7. **La documentation n’était disponible que dans trop peu de langues :** des versions françaises et japonaises complètes ont été ajoutées aux versions chinoise et anglaise. Les quatre versions suivent la même structure et sont accessibles depuis la navigation linguistique en haut du fichier.
 8. **L’application ne proposait pas d’interface japonaise :** le japonais a été ajouté à l’énumération des langues, au menu, à la saisie des dimensions, aux messages d’état, à la fenêtre de fin et aux titres de fenêtre. L’écran des langues, le raccourci `J` et les glyphes bitmap kana et kanji nécessaires ont également été ajoutés.
+9. **La souris se déplaçait toujours à vitesse fixe :** une entrée `RÉGLAGES` ouvre maintenant un curseur à cinq positions avec commandes au clavier. Le module d’animation associe les niveaux `1` à `5` à des délais d’image progressivement plus courts ; les niveaux élevés sont donc plus rapides. Le niveau `3` est utilisé par défaut.
 
-Ces modifications ont passé la compilation C11 sous Linux, `make test-generator`, `make test-ui` avec le pilote vidéo factice de SDL, les vérifications ASan/UBSan, la compilation croisée Windows avec MinGW-w64 et la création du répertoire de distribution. Les tests UI couvrent l’écran des langues, les clics après redimensionnement, l’annulation de l’animation et les deux actions de la fenêtre de fin.
+Ces modifications ont passé la compilation C11 sous Linux, `make test-generator`, `make test-ui` avec le pilote vidéo factice de SDL, les vérifications ASan/UBSan, la compilation croisée Windows avec MinGW-w64 et la création du répertoire de distribution. Les tests UI couvrent l’écran des langues, le curseur de vitesse, les clics après redimensionnement, l’annulation de l’animation et les deux actions de la fenêtre de fin.
 
 ### Notes de développement
 
@@ -644,9 +659,10 @@ Maze Solver は、**C と SDL2** で実装された迷路探索・アニメー�
 - 学習・比較用の DFS ソルバーを保持
 - SDL2 による壁、経路、ネズミ、チーズの描画
 - 開始地点から目的地点までの移動アニメーション
+- `1`（最も遅い）から `5`（最も速い）までの 5 段階のアニメーション速度
 - 探索完了後に「もう一度」または初期画面へ戻る操作を選択可能
 - アニメーション中もウィンドウを閉じる操作に応答
-- 探索開始、新規迷路生成、言語選択、終了を行うスタート画面
+- 探索開始、新規迷路生成、速度設定、言語選択、終了を行うスタート画面
 - OS のフォントに依存しない中国語・英語・フランス語・日本語の内蔵インターフェース
 - メニューと迷路の比率およびクリック領域を保った自由なウィンドウサイズ変更
 - C によるランダムな完全迷路の生成
@@ -659,7 +675,7 @@ Maze Solver は、**C と SDL2** で実装された迷路探索・アニメー�
 | `src/app.c` | SDL2 ウィンドウ、レンダラー、テクスチャ、アプリケーション全体のリソース管理 |
 | `src/maze.c` | 迷路ファイルの読み込み、形式検証、マーカー検索 |
 | `src/generator.c` | C 版ランダム完全迷路ジェネレーター |
-| `src/menu.c` | スタート画面、言語選択画面、ボタン描画、入力処理 |
+| `src/menu.c` | スタート画面、設定画面、言語選択画面、ボタン描画、入力処理 |
 | `src/ui.c` | 中国語・英語・フランス語・日本語の UI テキストと UTF-8 ビットマップフォント描画 |
 | `src/solver.c` | DFS、BFS、経路記録処理 |
 | `src/visualize.c` | 迷路描画と経路アニメーション |
@@ -700,18 +716,21 @@ gcc -std=c11 -Wall -Wextra -Wpedantic src/*.c -Iinclude \
 ./maze_solver
 ```
 
-アプリケーションはデフォルトで中国語を使用し、4 つのボタンを持つスタート画面を表示します：
+アプリケーションはデフォルトで中国語を使用し、5 つのボタンを持つスタート画面を表示します：
 
 - `开始`：現在の迷路を解いてアニメーションを再生
 - `新迷宫`：幅と高さの入力画面を開き、確定後に新しい迷路を生成して `assets/maze.txt` に保存
+- `设置`：アニメーション速度の設定画面を開く
 - `语言`：専用の言語選択画面を開き、中文、English、Français、日本語から選択
 - `退出`：アプリケーションを終了
+
+設定画面には `1` から `5` までの 5 段階のスライダーがあり、`1` が最も遅く、`5` が最も速く、デフォルトは `3` です。クリックまたはドラッグ、左右方向キー、数字キー `1`～`5` で調整できます。選択した値は現在のアプリケーション実行中に保持され、経路アニメーションの各ステップ間の待ち時間へ直接反映されます。
 
 ネズミがチーズに到達すると、迷路の中央に完了ウィンドウが表示されます。「もう一度」を選ぶと現在の迷路を再生し、「終了」または `Esc` を選ぶと初期画面に戻ります。SDL ウィンドウを閉じた場合のみ、アプリケーション全体が終了します。
 
 サイズ入力画面では、`WIDTH` または `HEIGHT` をクリックして数字を入力すると現在値を置き換えられます。`Tab` で入力欄を切り替え、Backspace で数字を削除します。`Enter` または `GENERATE` で確定し、`Esc` または `CANCEL` でファイルを生成せずにメニューへ戻ります。幅と高さは `3` から `99` までの奇数である必要があり、両方を同時に `3` にすることはできません。
 
-ウィンドウは自由にサイズ変更できます。SDL2 はメニューと迷路の論理キャンバスを縦横比を保って拡大縮小し、比率が異なる場合は余白を追加します。メニューでは `Enter`/Space で開始、`N` で迷路生成、`L` で言語選択画面を開き、`Q`/`Esc` で終了します。言語画面では `C`、`E`、`F`、`J` で中国語、英語、フランス語、日本語を選択できます。アニメーション中に `Esc` を押すとメニューへ戻ります。
+ウィンドウは自由にサイズ変更できます。SDL2 はメニューと迷路の論理キャンバスを縦横比を保って拡大縮小し、比率が異なる場合は余白を追加します。メニューでは `Enter`/Space で開始、`N` で迷路生成、`S` で設定画面、`L` で言語選択画面を開き、`Q`/`Esc` で終了します。言語画面では `C`、`E`、`F`、`J` で中国語、英語、フランス語、日本語を選択できます。アニメーション中に `Esc` を押すとメニューへ戻ります。
 
 ### Linux / WSL から Windows 版をクロスコンパイル
 
@@ -826,8 +845,9 @@ make test-ui
 6. **`dist/assets` がディレクトリの場合に `make clean` が失敗した：** `dist/*` でディレクトリまで対象にせず、明示したビルド成果物と DLL のみを削除するようにクリーン規則を変更しました。
 7. **README の対応言語が不足していた：** 中国語版と英語版に加えて、完全なフランス語版と日本語版を追加しました。4 言語で同じ章構成を使用し、ファイル上部の言語ナビゲーションから移動できます。
 8. **アプリケーションに日本語 UI がなかった：** 言語列挙、メニュー、寸法入力、状態メッセージ、完了ダイアログ、ウィンドウタイトルに日本語を追加しました。言語選択画面、`J` ショートカット、必要な仮名・漢字ビットマップグリフも拡張しています。
+9. **ネズミの移動速度が固定されていた：** スタートメニューに「設定」を追加し、キーボード操作にも対応する 5 段階のスライダーを実装しました。アニメーション層は `1`～`5` を段階的に短いフレーム待ち時間へ変換するため、大きい値ほど高速になります。デフォルトは `3` です。
 
-今回の変更は、Linux C11 ビルド、`make test-generator`、SDL dummy ビデオドライバーを使った `make test-ui`、ASan/UBSan、MinGW-w64 による Windows クロスビルド、配布ディレクトリのパッケージ作成で検証しました。UI テストでは言語選択画面、サイズ変更後のクリック、アニメーションのキャンセル、完了ダイアログの再生とメニュー復帰を確認しています。
+今回の変更は、Linux C11 ビルド、`make test-generator`、SDL dummy ビデオドライバーを使った `make test-ui`、ASan/UBSan、MinGW-w64 による Windows クロスビルド、配布ディレクトリのパッケージ作成で検証しました。UI テストでは言語選択画面、速度スライダー、サイズ変更後のクリック、アニメーションのキャンセル、完了ダイアログの再生とメニュー復帰を確認しています。
 
 ### 開発上の注意
 

@@ -19,6 +19,9 @@ typedef enum {
  */
 VisualizationResult visualization_play_maze(
     AppContext* app, char maze[][MAX_COLS + 1], const int path_x[],
-    const int path_y[], int path_len, UiLanguage language);
+    const int path_y[], int path_len, UiLanguage language, int speed_level);
+
+/* Convert speed level 1..5 to the delay between animation frames. */
+Uint32 visualization_delay_for_speed(int speed_level);
 
 #endif
