@@ -121,6 +121,19 @@ int main(int argc, char* argv[]) {
             break;
         }
 
+        case MENU_LANGUAGE:
+        {
+            LanguageSelectionResult language_result =
+                menu_prompt_language(&app, &language);
+            if (language_result == LANGUAGE_SELECTION_QUIT) {
+                running = 0;
+            } else if (language_result == LANGUAGE_SELECTION_ERROR) {
+                exit_code = 1;
+                running = 0;
+            }
+            break;
+        }
+
         case MENU_QUIT:
             running = 0;
             break;

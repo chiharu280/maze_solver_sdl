@@ -8,16 +8,16 @@
 #define MAX_CJK_GLYPHS 96
 
 typedef struct {
-    char character;
-    uint8_t rows[7];
-} AsciiGlyph;
+    uint32_t codepoint;
+    uint8_t rows[8];
+} LatinGlyph;
 
 typedef struct {
     uint32_t codepoint;
     uint16_t rows[16];
 } CjkGlyph;
 
-static const AsciiGlyph ASCII_FONT[] = {
+static const LatinGlyph LATIN_FONT[] = {
     {'0', {14, 17, 19, 21, 25, 17, 14}},
     {'1', {4, 12, 4, 4, 4, 4, 14}},
     {'2', {14, 17, 1, 2, 4, 8, 31}},
@@ -53,7 +53,11 @@ static const AsciiGlyph ASCII_FONT[] = {
     {'W', {17, 17, 17, 21, 21, 21, 10}},
     {'X', {17, 17, 10, 4, 10, 17, 17}},
     {'Y', {17, 17, 10, 4, 4, 4, 4}},
-    {'Z', {31, 1, 2, 4, 8, 16, 31}}
+    {'Z', {31, 1, 2, 4, 8, 16, 31}},
+    {0x00C0u, {4, 2, 14, 17, 31, 17, 17, 0}}, /* À */
+    {0x00C7u, {14, 17, 16, 16, 17, 14, 4, 8}}, /* Ç */
+    {0x00C9u, {2, 4, 31, 16, 30, 16, 31, 0}},  /* É */
+    {0x00CAu, {4, 10, 31, 16, 30, 16, 31, 0}}  /* Ê */
 };
 
 static CjkGlyph cjk_font[MAX_CJK_GLYPHS];
@@ -94,10 +98,10 @@ static void load_cjk_font(void) {
     fclose(file);
 }
 
-static const uint8_t* find_ascii_glyph(char character) {
-    for (size_t i = 0; i < sizeof(ASCII_FONT) / sizeof(ASCII_FONT[0]); ++i) {
-        if (ASCII_FONT[i].character == character) {
-            return ASCII_FONT[i].rows;
+static const uint8_t* find_latin_glyph(uint32_t codepoint) {
+    for (size_t i = 0; i < sizeof(LATIN_FONT) / sizeof(LATIN_FONT[0]); ++i) {
+        if (LATIN_FONT[i].codepoint == codepoint) {
+            return LATIN_FONT[i].rows;
         }
     }
     return NULL;
@@ -136,7 +140,7 @@ static uint32_t next_codepoint(const char** current) {
 }
 
 static int glyph_advance(uint32_t codepoint, int scale) {
-    return (codepoint < 0x80 ? 6 : 17) * scale;
+    return (codepoint < 0x100 ? 6 : 17) * scale;
 }
 
 const char* ui_status_text(UiLanguage language, UiStatus status) {
@@ -149,10 +153,18 @@ const char* ui_status_text(UiLanguage language, UiStatus status) {
         "准备就绪", "迷宫加载失败", "新迷宫已生成", "迷宫生成失败",
         "已取消", "返回菜单", "没有找到路径"
     };
+    static const char* const french[] = {
+        "PRÊT", "ÉCHEC DU CHARGEMENT", "NOUVEAU LABYRINTHE CRÉÉ",
+        "ÉCHEC DE CRÉATION", "CRÉATION ANNULÉE", "RETOUR AU MENU",
+        "AUCUN CHEMIN"
+    };
     if (status < UI_STATUS_READY || status > UI_STATUS_NO_PATH_FOUND) {
         status = UI_STATUS_READY;
     }
-    return language == UI_LANGUAGE_CHINESE ? chinese[status] : english[status];
+    if (language == UI_LANGUAGE_CHINESE) {
+        return chinese[status];
+    }
+    return language == UI_LANGUAGE_FRENCH ? french[status] : english[status];
 }
 
 int ui_text_width(const char* text, int scale) {
@@ -178,10 +190,10 @@ void ui_draw_text(AppContext* app, const char* text, int center_x, int y,
     SDL_SetRenderDrawColor(app->renderer, color.r, color.g, color.b, color.a);
     while (*current) {
         uint32_t codepoint = next_codepoint(&current);
-        if (codepoint < 0x80) {
-            const uint8_t* rows = find_ascii_glyph((char)codepoint);
+        if (codepoint < 0x100) {
+            const uint8_t* rows = find_latin_glyph(codepoint);
             if (rows) {
-                for (int row = 0; row < 7; ++row) {
+                for (int row = 0; row < 8; ++row) {
                     for (int column = 0; column < 5; ++column) {
                         if (rows[row] & (1u << (4 - column))) {
                             SDL_Rect pixel = {x + column * scale,

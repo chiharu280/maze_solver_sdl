@@ -110,11 +110,38 @@ int main(void) {
     test_resized_buttons(&app);
 
     push_click(400, 385);
-    push_key(SDLK_q);
-    CHECK(menu_run(&app, UI_STATUS_READY, &language) == MENU_QUIT,
-          "语言按钮切换后菜单应继续响应事件");
-    CHECK(language == UI_LANGUAGE_CHINESE,
-          "语言按钮应在英文和中文之间切换");
+    CHECK(menu_run(&app, UI_STATUS_READY, &language) == MENU_LANGUAGE,
+          "语言按钮应进入独立的语言选择界面");
+    CHECK(language == UI_LANGUAGE_ENGLISH,
+          "进入语言选择界面前不得直接改变语言");
+
+    push_click(400, 387);
+    CHECK(menu_prompt_language(&app, &language) ==
+              LANGUAGE_SELECTION_SELECTED,
+          "语言选择界面应允许选择法语");
+    CHECK(language == UI_LANGUAGE_FRENCH,
+          "选择法语后应保存法语设置");
+    CHECK(ui_text_width("LANGUAGE", 4) <= 300,
+          "主菜单语言按钮文字不得超出选择框");
+    CHECK(ui_text_width("FRANÇAIS", 4) <= 400,
+          "法语名称不得超出语言选择框");
+    CHECK(ui_text_width("CHOISIR LA LANGUE", 7) <= 800,
+          "法语语言选择标题不得超出画布");
+    CHECK(ui_text_width("LA SOURIS A TROUVÉ LE FROMAGE", 3) <= 520,
+          "法语完成提示不得超出弹窗内容区域");
+    for (int status = UI_STATUS_READY; status <= UI_STATUS_NO_PATH_FOUND;
+         ++status) {
+        CHECK(ui_text_width(ui_status_text(UI_LANGUAGE_FRENCH,
+                                           (UiStatus)status), 3) <= 800,
+              "法语状态文字不得超出菜单画布");
+    }
+
+    push_key(SDLK_ESCAPE);
+    CHECK(menu_prompt_language(&app, &language) ==
+              LANGUAGE_SELECTION_CANCELLED,
+          "Esc 应取消语言选择");
+    CHECK(language == UI_LANGUAGE_FRENCH,
+          "取消语言选择不得改变当前语言");
     language = UI_LANGUAGE_ENGLISH;
 
     push_text("50");
@@ -179,9 +206,9 @@ int main(void) {
                                          (void*)&exit_button);
         CHECK(timer != 0, "应能创建完成弹窗退出测试定时器");
         CHECK(visualization_play_maze(&app, small_maze, path_x, path_y, 3,
-                                      UI_LANGUAGE_ENGLISH) ==
+                                      UI_LANGUAGE_FRENCH) ==
                   VISUALIZATION_FINISHED,
-              "完成弹窗的退出按钮应返回初始菜单");
+              "法语完成弹窗的退出按钮应返回初始菜单");
     }
 
     push_key(SDLK_q);

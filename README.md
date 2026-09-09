@@ -1,6 +1,6 @@
 # Maze Solver 1.0 / 迷宫求解与可视化
 
-[English](#english) | [中文](#中文)
+[English](#english) | [中文](#中文) | [Français](#français) | [日本語](#日本語)
 
 ## 中文
 
@@ -20,7 +20,7 @@ Maze Solver 是一个使用 **C 和 SDL2** 编写的迷宫求解与动画可视�
 - 求解完成后提供“再来一次”或返回初始界面的选择
 - 在动画期间保持窗口关闭事件可响应
 - 提供开始求解、生成新迷宫、语言切换和退出游戏的开始界面
-- 内置中英文界面，不依赖操作系统字体
+- 内置中文、英文和法文界面，不依赖操作系统字体
 - 窗口可自由缩放，菜单与迷宫保持正确比例和点击区域
 - 使用 C 随机生成新的完美迷宫
 
@@ -32,8 +32,8 @@ Maze Solver 是一个使用 **C 和 SDL2** 编写的迷宫求解与动画可视�
 | `src/app.c` | SDL2 窗口、渲染器、贴图及应用级资源生命周期 |
 | `src/maze.c` | 迷宫文件读取、格式校验和标记查找 |
 | `src/generator.c` | C 版随机完美迷宫生成器 |
-| `src/menu.c` | 开始界面、内置位图字体、按钮绘制与交互 |
-| `src/ui.c` | 中英文界面文本和 UTF-8 位图字体渲染 |
+| `src/menu.c` | 开始界面、语言选择界面、按钮绘制与交互 |
+| `src/ui.c` | 中英法界面文本和 UTF-8 位图字体渲染 |
 | `src/solver.c` | DFS、BFS 与路径记录逻辑 |
 | `src/visualize.c` | 迷宫渲染和路径动画 |
 | `include/` | 各模块的公共头文件 |
@@ -77,14 +77,14 @@ gcc -std=c11 -Wall -Wextra -Wpedantic src/*.c -Iinclude \
 
 - `开始`：求解当前迷宫并播放动画
 - `新迷宫`：打开宽高输入界面，确认后生成新迷宫并写入 `assets/maze.txt`
-- `语言 中文`：在中文和英文之间切换，界面会立即更新
+- `语言`：进入独立语言选择页，可选择中文、English 或 Français
 - `退出`：退出游戏
 
 老鼠到达奶酪后，迷宫中央会显示完成窗口。选择“再来一次”会重新播放当前迷宫；选择“退出”或按 `Esc` 会返回初始界面。关闭 SDL 窗口才会退出整个应用。
 
 尺寸页面点击 `WIDTH` 或 `HEIGHT` 后直接输入数字即可替换原值，`Tab` 切换输入框，退格删除数字。按 `Enter` 或点击 `GENERATE` 确认；`Esc` 或 `CANCEL` 返回菜单且不生成文件。宽高须为 `3` 到 `99` 的奇数，不能同时为 `3`。
 
-窗口可以拖拽缩放。SDL2 会分别按照菜单和迷宫的逻辑画布等比例缩放，宽高比不同时自动留边。菜单支持 `Enter`/空格开始、`N` 生成迷宫、`L` 切换语言、`Q`/`Esc` 退出；动画期间按 `Esc` 可返回菜单。
+窗口可以拖拽缩放。SDL2 会分别按照菜单和迷宫的逻辑画布等比例缩放，宽高比不同时自动留边。菜单支持 `Enter`/空格开始、`N` 生成迷宫、`L` 打开语言选择页、`Q`/`Esc` 退出；语言页也可按 `C`、`E`、`F` 选择中文、英文、法文。动画期间按 `Esc` 可返回菜单。
 
 ### 从 Linux / WSL 交叉编译 Windows 版本
 
@@ -189,7 +189,7 @@ make test-ui
 
 ### 当前开发状态与问题记录
 
-`dev` 分支已经完成 SDL 应用生命周期拆分、C 版完美迷宫生成器、三按钮开始菜单、动画返回菜单，以及可缩放逻辑画布。当前记录以下界面问题，作为后续修改和回归测试依据：
+当前程序已经具备 SDL 应用生命周期拆分、C 版完美迷宫生成器、四按钮开始菜单、三语言选择、完成弹窗，以及可缩放逻辑画布。以下界面问题保留为回归测试记录：
 
 1. **已修复：**`NEW MAZE` 现会打开尺寸输入界面，支持鼠标切换宽高输入框、数字输入、退格、`Tab` 切换、确认和取消，并在生成前校验奇数范围。
 2. **已修复：** 缩放后按钮失效源于对 SDL 已转换的鼠标事件再次进行逻辑坐标换算。菜单现直接使用 SDL 提供的逻辑事件坐标，并加入非等比例缩放后的按钮点击回归测试。
@@ -221,7 +221,7 @@ A recursive **depth-first search (DFS)** implementation is also kept in the proj
 - Completion dialog with replay and return-to-menu actions
 - Responsive close events during animation
 - Start screen with solve, new-maze, language, and quit actions
-- Built-in Chinese and English UI without a system-font dependency
+- Built-in Chinese, English, and French UI without a system-font dependency
 - Freely resizable window with correctly scaled screens and hit targets
 - C-based random perfect-maze generator
 
@@ -233,8 +233,8 @@ A recursive **depth-first search (DFS)** implementation is also kept in the proj
 | `src/app.c` | SDL2 window, renderer, textures, and application resource lifetime |
 | `src/maze.c` | Maze parsing, validation, and marker lookup |
 | `src/generator.c` | C random perfect-maze generator |
-| `src/menu.c` | Start screen, built-in bitmap font, button rendering, and input |
-| `src/ui.c` | Localized UI strings and UTF-8 bitmap-font rendering |
+| `src/menu.c` | Start screen, language selection, button rendering, and input |
+| `src/ui.c` | Chinese, English, and French UI strings and bitmap-font rendering |
 | `src/solver.c` | DFS, BFS, and path storage |
 | `src/visualize.c` | Maze rendering and route animation |
 | `include/` | Public module headers |
@@ -278,14 +278,14 @@ The application defaults to Chinese and opens with four menu buttons:
 
 - `START`: solve and animate the current maze
 - `NEW MAZE`: open the width/height input screen, then generate and write the confirmed maze to `assets/maze.txt`
-- `LANGUAGE ENGLISH`: switch between Chinese and English; the screen updates immediately
+- `LANGUAGE`: open a separate screen and choose Chinese, English, or French
 - `QUIT`: exit the application
 
 When the mouse reaches the cheese, a centered completion dialog offers `PLAY AGAIN` to replay the current maze and `EXIT` to return to the initial menu. Closing the SDL window still exits the application.
 
 On the size screen, click `WIDTH` or `HEIGHT` and type digits to replace its value. Use `Tab` to switch fields and Backspace to delete digits. `Enter` or `GENERATE` confirms; `Esc` or `CANCEL` returns without generating a file. Both dimensions must be odd values from `3` to `99`, and cannot both be `3`.
 
-The window can be resized freely. SDL2 scales the menu and maze logical canvases proportionally and letterboxes them when their aspect ratios differ. Press `Enter`/Space to start, `N` for a new maze, `L` to switch language, and `Q`/`Esc` to quit from the menu. During animation, `Esc` returns to the menu.
+The window can be resized freely. SDL2 scales the menu and maze logical canvases proportionally and letterboxes them when their aspect ratios differ. Press `Enter`/Space to start, `N` for a new maze, `L` to open language selection, and `Q`/`Esc` to quit from the menu. On the language screen, `C`, `E`, and `F` select Chinese, English, and French. During animation, `Esc` returns to the menu.
 
 ### Cross-compile a Windows build from Linux / WSL
 
@@ -390,7 +390,7 @@ The old `python/maze_gen.py` is deprecated and retained for reference only. It i
 
 ### Current development status and issue log
 
-The `dev` branch now includes the separated SDL application lifecycle, C perfect-maze generator, three-button start menu, return-to-menu animation flow, and resizable logical canvases. The following UI issues are recorded for implementation and regression testing:
+The current application includes the separated SDL application lifecycle, C perfect-maze generator, four-button start menu, three-language selection, completion dialog, and resizable logical canvases. The following UI issues are recorded for regression testing:
 
 1. **Resolved:** `NEW MAZE` now opens a dimension-entry screen with mouse field selection, numeric input, Backspace, `Tab`, confirm/cancel controls, and odd-range validation before generation.
 2. **Resolved:** Resized clicks failed because already-transformed SDL mouse events were converted to logical coordinates a second time. The menu now consumes SDL's logical event coordinates directly, with a regression test covering button clicks after non-proportional resizing.
@@ -401,3 +401,405 @@ The `dev` branch now includes the separated SDL application lifecycle, C perfect
 - BFS does not modify the original maze; SDL2 renders the route through a separate overlay.
 - SDL2 initialization, animation, and cleanup are separate; resources are released once when the application exits.
 - After a change, rebuild with `make` and run the default maze through a complete animation.
+
+---
+
+## Français
+
+### Présentation
+
+Maze Solver est un projet de résolution et de visualisation animée de labyrinthes, développé en **C avec SDL2**. Le programme charge un labyrinthe depuis un fichier texte, utilise une **recherche en largeur (BFS)** pour déterminer le plus court chemin entre le point de départ de la souris et le fromage, puis anime le déplacement de la souris dans une fenêtre SDL2.
+
+Une implémentation récursive de la **recherche en profondeur (DFS)** est également conservée afin de faciliter l’apprentissage et la comparaison des algorithmes.
+
+### Fonctionnalités
+
+- Chargement et validation stricte du format des labyrinthes texte
+- Recherche du plus court chemin dans un labyrinthe non pondéré à quatre directions avec BFS
+- Conservation du solveur DFS pour l’apprentissage et la comparaison
+- Rendu SDL2 des murs, du chemin, de la souris et du fromage
+- Animation du déplacement du départ jusqu’à l’arrivée
+- Choix entre rejouer et revenir à l’écran initial après la résolution
+- Prise en charge de la fermeture de la fenêtre pendant l’animation
+- Écran d’accueil permettant de lancer la résolution, créer un labyrinthe, choisir la langue ou quitter
+- Interface intégrée en chinois, anglais et français, sans dépendance aux polices du système
+- Fenêtre librement redimensionnable avec conservation des proportions et des zones cliquables
+- Génération aléatoire de labyrinthes parfaits en C
+
+### Structure du projet
+
+| Chemin | Rôle |
+| --- | --- |
+| `src/main.c` | Point d’entrée : chargement du labyrinthe, appel de BFS et lancement de la visualisation |
+| `src/app.c` | Fenêtre SDL2, moteur de rendu, textures et cycle de vie des ressources de l’application |
+| `src/maze.c` | Lecture du fichier, validation du format et recherche des marqueurs |
+| `src/generator.c` | Générateur aléatoire de labyrinthes parfaits en C |
+| `src/menu.c` | Écran d’accueil, sélection de la langue, rendu des boutons et interactions |
+| `src/ui.c` | Textes chinois, anglais et français et rendu de la police bitmap UTF-8 |
+| `src/solver.c` | Solveurs DFS et BFS et stockage du chemin |
+| `src/visualize.c` | Rendu du labyrinthe et animation du chemin |
+| `include/` | En-têtes publics des modules |
+| `assets/maze.txt` | Labyrinthe par défaut |
+| `assets/mouse.bmp` | Image de la souris |
+| `assets/cheese.bmp` | Image du fromage |
+| `assets/ui_font.hex` | Sous-ensemble de glyphes chinois requis par l’interface |
+| `tools/maze_gen.c` | Point d’entrée en ligne de commande du générateur C |
+| `python/maze_gen.py` | Ancien générateur Python obsolète, conservé comme référence |
+| `Makefile` | Règles de compilation Linux/WSL et de compilation croisée Windows |
+
+### Dépendances
+
+- Un compilateur compatible C11, par exemple GCC
+- Les fichiers de développement SDL2
+
+Sous Ubuntu, Debian ou WSL :
+
+```bash
+sudo apt install build-essential libsdl2-dev
+```
+
+### Compilation et exécution
+
+Depuis la racine du projet :
+
+```bash
+make
+./maze_solver
+```
+
+Il est également possible d’utiliser directement GCC :
+
+```bash
+gcc -std=c11 -Wall -Wextra -Wpedantic src/*.c -Iinclude \
+  $(sdl2-config --cflags --libs) -o maze_solver
+./maze_solver
+```
+
+L’application utilise le chinois par défaut et affiche un écran d’accueil comportant quatre boutons :
+
+- `开始` : résoudre et animer le labyrinthe actuel
+- `新迷宫` : ouvrir l’écran de saisie des dimensions, puis générer le labyrinthe confirmé dans `assets/maze.txt`
+- `语言` : ouvrir une page séparée permettant de choisir 中文, English ou Français
+- `退出` : quitter l’application
+
+Lorsque la souris atteint le fromage, une fenêtre de fin apparaît au centre du labyrinthe. `REJOUER` relance l’animation du labyrinthe actuel ; `QUITTER` ou `Esc` revient à l’écran initial. Seule la fermeture de la fenêtre SDL quitte entièrement l’application.
+
+Sur l’écran des dimensions, cliquez sur `LARGEUR` ou `HAUTEUR`, puis saisissez des chiffres pour remplacer la valeur. `Tab` change de champ et Retour arrière supprime un chiffre. `Entrée` ou `CRÉER` confirme ; `Esc` ou `ANNULER` revient au menu sans créer de fichier. Les deux dimensions doivent être des nombres impairs compris entre `3` et `99`, et ne peuvent pas être toutes les deux égales à `3`.
+
+La fenêtre peut être librement redimensionnée. SDL2 redimensionne proportionnellement les canevas logiques du menu et du labyrinthe, avec des bandes lorsque leurs proportions diffèrent. Dans le menu, `Entrée`/Espace lance la résolution, `N` crée un labyrinthe, `L` ouvre le choix de la langue et `Q`/`Esc` quitte. Sur l’écran des langues, `C`, `E` et `F` sélectionnent le chinois, l’anglais et le français. Pendant l’animation, `Esc` revient au menu.
+
+### Compilation croisée pour Windows depuis Linux / WSL
+
+Le Makefile fournit une cible MinGW-w64 pour compiler une version **Windows 64 bits**. Installez d’abord le compilateur croisé sous Ubuntu, Debian ou WSL :
+
+```bash
+sudo apt install mingw-w64
+```
+
+Compilez ensuite l’exécutable Windows depuis la racine du projet :
+
+```bash
+make windows
+```
+
+Le résultat est créé ici :
+
+```text
+dist/maze_solver.exe
+```
+
+Pour copier également la DLL SDL2 et le répertoire de ressources `assets/`, exécutez :
+
+```bash
+make package-win
+```
+
+Copiez ensuite le répertoire `dist/` complet sur la machine Windows et lancez `maze_solver.exe` depuis ce répertoire. Par défaut, le Makefile utilise `x86_64-w64-mingw32-gcc` et le paquet SDL2 fourni dans `lib/x86_64-w64-mingw32`. Si SDL2 se trouve ailleurs, modifiez d’abord `SDL2_WIN`. L’option d’édition de liens `-mwindows` est activée ; la version Windows n’ouvre donc pas de console par défaut.
+
+### Format du fichier de labyrinthe
+
+La première ligne contient :
+
+```text
+nombre_de_colonnes nombre_de_lignes
+```
+
+Elle doit être suivie exactement du nombre de lignes indiqué, chacune contenant exactement le nombre de caractères déclaré. Seuls les caractères suivants sont autorisés :
+
+| Caractère | Signification |
+| --- | --- |
+| `#` | Mur infranchissable |
+| Espace | Passage libre |
+| `S` | Point de départ unique |
+| `E` | Point d’arrivée unique |
+
+Exemple de labyrinthe `5 × 3` :
+
+```text
+5 3
+#####
+#S E#
+#####
+```
+
+La taille maximale prise en charge est de `100 × 100`. Le programme refuse les dimensions ou longueurs de ligne incorrectes, les caractères invalides, les données de labyrinthe supplémentaires ainsi que les marqueurs `S` ou `E` absents ou dupliqués.
+
+### Algorithmes
+
+#### BFS (par défaut)
+
+`solve_maze_bfs()` utilise une file pour explorer le labyrinthe couche par couche. Dans un labyrinthe non pondéré où les déplacements se font dans quatre directions, BFS garantit un plus court chemin.
+
+#### DFS (implémentation conservée)
+
+`solve_maze()` utilise une recherche récursive en profondeur avec retour arrière. Elle peut trouver un chemin valide, mais ne garantit pas qu’il soit le plus court. Cette implémentation est conservée pour l’étude et la comparaison.
+
+Les deux solveurs enregistrent le chemin dans `path_x`, `path_y` et `path_len`, dans l’ordre « arrivée vers départ ». Le module de visualisation parcourt cette séquence en sens inverse afin d’animer le déplacement du départ vers l’arrivée.
+
+### Générer un nouveau labyrinthe
+
+Compilez le générateur C, puis exécutez-le depuis la racine du projet pour créer le labyrinthe par défaut de `91 × 91` :
+
+```bash
+make generator
+./maze_generator
+```
+
+La commande par défaut remplace `assets/maze.txt`. Le générateur ne dépend pas de SDL2 et nécessite uniquement un compilateur C11.
+
+Vous pouvez aussi indiquer la largeur, la hauteur, le fichier de sortie et une graine aléatoire facultative :
+
+```bash
+./maze_generator 51 41 assets/maze.txt 12345
+```
+
+La largeur et la hauteur doivent être des nombres impairs compris entre `3` et `100` ; la valeur maximale effective est donc `99`. La taille `3 × 3` est refusée, car le départ et l’arrivée se chevaucheraient. Le générateur utilise un DFS aléatoire non récursif et produit un labyrinthe aux limites fermées, dont tous les passages sont connectés et sans cycle, directement dans le format attendu par le lecteur. Les mêmes dimensions et la même graine produisent exactement le même labyrinthe.
+
+Pour exécuter les tests automatisés du générateur :
+
+```bash
+make test-generator
+```
+
+Pour exécuter sans affichage les tests du menu, des entrées, du cycle de vie SDL et de la mise à l’échelle logique :
+
+```bash
+make test-ui
+```
+
+L’ancien fichier `python/maze_gen.py` est obsolète et conservé uniquement comme référence. Il ne participe ni à la compilation ni à l’exécution actuelles.
+
+### État actuel du développement et suivi des problèmes
+
+L’application comprend actuellement un cycle de vie SDL séparé, un générateur C de labyrinthes parfaits, un écran d’accueil à quatre boutons, un choix parmi trois langues, une fenêtre de fin et des canevas logiques redimensionnables. Les problèmes d’interface suivants sont conservés comme tests de non-régression :
+
+1. **Corrigé :** `NEW MAZE` ouvre désormais un écran de saisie des dimensions avec sélection des champs à la souris, saisie numérique, Retour arrière, changement de champ avec `Tab`, confirmation ou annulation, et validation des dimensions impaires avant la génération.
+2. **Corrigé :** les clics après redimensionnement échouaient parce que les coordonnées de souris déjà transformées par SDL étaient converties une seconde fois. Le menu utilise maintenant directement les coordonnées logiques fournies par SDL, avec un test de non-régression couvrant les clics après un redimensionnement non proportionnel.
+
+### Notes de développement
+
+- Le projet cible C11 et active par défaut `-Wall -Wextra -Wpedantic`.
+- BFS ne modifie pas le labyrinthe d’origine ; SDL2 dessine l’animation avec une couche de chemin séparée.
+- L’initialisation de SDL2, l’animation et le nettoyage des ressources sont séparés ; les ressources sont libérées une seule fois à la fermeture de l’application.
+- Après une modification, recompilez avec `make` et vérifiez une animation complète avec le labyrinthe par défaut.
+
+---
+
+## 日本語
+
+### 概要
+
+Maze Solver は、**C と SDL2** で実装された迷路探索・アニメーション可視化プロジェクトです。テキストファイルから迷路を読み込み、**幅優先探索（BFS）** を使ってネズミの開始地点からチーズの目的地点までの最短経路を求め、その移動を SDL2 ウィンドウ内でアニメーション表示します。
+
+アルゴリズムの学習や比較のため、再帰的な **深さ優先探索（DFS）** の実装も残されています。
+
+### 機能
+
+- テキスト迷路の読み込みと厳密な形式検証
+- 上下左右に移動する重みなし迷路の最短経路を BFS で探索
+- 学習・比較用の DFS ソルバーを保持
+- SDL2 による壁、経路、ネズミ、チーズの描画
+- 開始地点から目的地点までの移動アニメーション
+- 探索完了後に「もう一度」または初期画面へ戻る操作を選択可能
+- アニメーション中もウィンドウを閉じる操作に応答
+- 探索開始、新規迷路生成、言語選択、終了を行うスタート画面
+- OS のフォントに依存しない中国語・英語・フランス語の内蔵インターフェース
+- メニューと迷路の比率およびクリック領域を保った自由なウィンドウサイズ変更
+- C によるランダムな完全迷路の生成
+
+### プロジェクト構成
+
+| パス | 役割 |
+| --- | --- |
+| `src/main.c` | エントリーポイント：迷路の読み込み、BFS の呼び出し、可視化の開始 |
+| `src/app.c` | SDL2 ウィンドウ、レンダラー、テクスチャ、アプリケーション全体のリソース管理 |
+| `src/maze.c` | 迷路ファイルの読み込み、形式検証、マーカー検索 |
+| `src/generator.c` | C 版ランダム完全迷路ジェネレーター |
+| `src/menu.c` | スタート画面、言語選択画面、ボタン描画、入力処理 |
+| `src/ui.c` | 中国語・英語・フランス語の UI テキストと UTF-8 ビットマップフォント描画 |
+| `src/solver.c` | DFS、BFS、経路記録処理 |
+| `src/visualize.c` | 迷路描画と経路アニメーション |
+| `include/` | 各モジュールの公開ヘッダー |
+| `assets/maze.txt` | デフォルト迷路 |
+| `assets/mouse.bmp` | ネズミ画像 |
+| `assets/cheese.bmp` | チーズ画像 |
+| `assets/ui_font.hex` | UI に必要な中国語グリフのサブセット |
+| `tools/maze_gen.c` | C 版ジェネレーターのコマンドラインエントリーポイント |
+| `python/maze_gen.py` | 参考用に残された非推奨の旧 Python ジェネレーター |
+| `Makefile` | Linux/WSL ビルドおよび Windows クロスコンパイル規則 |
+
+### 依存関係
+
+- C11 対応コンパイラー（GCC など）
+- SDL2 開発ライブラリ
+
+Ubuntu / Debian / WSL では次を実行します：
+
+```bash
+sudo apt install build-essential libsdl2-dev
+```
+
+### ビルドと実行
+
+プロジェクトのルートディレクトリで実行します：
+
+```bash
+make
+./maze_solver
+```
+
+GCC を直接使用することもできます：
+
+```bash
+gcc -std=c11 -Wall -Wextra -Wpedantic src/*.c -Iinclude \
+  $(sdl2-config --cflags --libs) -o maze_solver
+./maze_solver
+```
+
+アプリケーションはデフォルトで中国語を使用し、4 つのボタンを持つスタート画面を表示します：
+
+- `开始`：現在の迷路を解いてアニメーションを再生
+- `新迷宫`：幅と高さの入力画面を開き、確定後に新しい迷路を生成して `assets/maze.txt` に保存
+- `语言`：専用の言語選択画面を開き、中文、English、Français から選択
+- `退出`：アプリケーションを終了
+
+ネズミがチーズに到達すると、迷路の中央に完了ウィンドウが表示されます。「もう一度」を選ぶと現在の迷路を再生し、「終了」または `Esc` を選ぶと初期画面に戻ります。SDL ウィンドウを閉じた場合のみ、アプリケーション全体が終了します。
+
+サイズ入力画面では、`WIDTH` または `HEIGHT` をクリックして数字を入力すると現在値を置き換えられます。`Tab` で入力欄を切り替え、Backspace で数字を削除します。`Enter` または `GENERATE` で確定し、`Esc` または `CANCEL` でファイルを生成せずにメニューへ戻ります。幅と高さは `3` から `99` までの奇数である必要があり、両方を同時に `3` にすることはできません。
+
+ウィンドウは自由にサイズ変更できます。SDL2 はメニューと迷路の論理キャンバスを縦横比を保って拡大縮小し、比率が異なる場合は余白を追加します。メニューでは `Enter`/Space で開始、`N` で迷路生成、`L` で言語選択画面を開き、`Q`/`Esc` で終了します。言語画面では `C`、`E`、`F` で中国語、英語、フランス語を選択できます。アニメーション中に `Esc` を押すとメニューへ戻ります。
+
+### Linux / WSL から Windows 版をクロスコンパイル
+
+Makefile には **64 ビット Windows** 向けの MinGW-w64 クロスコンパイルターゲットがあります。まず Ubuntu、Debian、または WSL にクロスコンパイラーをインストールします：
+
+```bash
+sudo apt install mingw-w64
+```
+
+次にプロジェクトのルートディレクトリで Windows 実行ファイルをビルドします：
+
+```bash
+make windows
+```
+
+生成先：
+
+```text
+dist/maze_solver.exe
+```
+
+SDL2 ランタイム DLL と `assets/` リソースディレクトリもコピーする場合は、次を実行します：
+
+```bash
+make package-win
+```
+
+完了後、`dist/` ディレクトリ全体を Windows マシンへコピーし、そのディレクトリから `maze_solver.exe` を起動します。Makefile はデフォルトで `x86_64-w64-mingw32-gcc` と、プロジェクト内の `lib/x86_64-w64-mingw32` にある SDL2 開発パッケージを使用します。SDL2 の場所が異なる場合は、先に `SDL2_WIN` を変更してください。現在のリンクオプションには `-mwindows` が含まれるため、Windows 版では通常コンソールウィンドウが表示されません。
+
+### 迷路ファイル形式
+
+迷路ファイルの先頭行は次の形式です：
+
+```text
+列数 行数
+```
+
+その後に指定された行数分の迷路データが続きます。各行は指定された列数と正確に一致し、使用できる文字は次のものだけです：
+
+| 文字 | 意味 |
+| --- | --- |
+| `#` | 壁（通行不可） |
+| 空白 | 通路 |
+| `S` | 一意の開始地点 |
+| `E` | 一意の目的地点 |
+
+`5 × 3` の例：
+
+```text
+5 3
+#####
+#S E#
+#####
+```
+
+対応する最大サイズは `100 × 100` です。寸法や行の長さが不正な場合、無効な文字や余分な迷路データがある場合、または `S` と `E` が存在しない、あるいは重複している場合は拒否されます。
+
+### アルゴリズム
+
+#### BFS（デフォルト）
+
+`solve_maze_bfs()` はキューを使用して距離ごとの層を順番に探索します。本プロジェクトのように各移動のコストが同じで上下左右にのみ移動できる迷路では、BFS は最短経路を保証します。
+
+#### DFS（保持されている実装）
+
+`solve_maze()` は再帰的な深さ優先探索とバックトラッキングを使用します。有効な経路を見つけられますが、最短であることは保証されません。この実装はアルゴリズムの比較と学習のために残されています。
+
+どちらのソルバーも経路を `path_x`、`path_y`、`path_len` に「目的地点から開始地点」の順で記録します。可視化モジュールはこの並びを逆順に読み取り、開始地点から目的地点までの移動をアニメーション表示します。
+
+### 新しい迷路の生成
+
+C 版ジェネレーターをビルドし、プロジェクトのルートディレクトリから実行して、デフォルトの `91 × 91` 迷路を生成します：
+
+```bash
+make generator
+./maze_generator
+```
+
+デフォルトのコマンドは `assets/maze.txt` を上書きします。ジェネレーター自体は SDL2 に依存せず、C11 コンパイラーだけを必要とします。
+
+幅、高さ、出力ファイル、および任意の乱数シードを指定することもできます：
+
+```bash
+./maze_generator 51 41 assets/maze.txt 12345
+```
+
+幅と高さは `3` から `100` の範囲にある奇数でなければならないため、実際の最大値は `99` です。`3 × 3` は開始地点と目的地点が重なるため拒否されます。ジェネレーターは非再帰のランダム DFS を使用し、境界が閉じ、すべての通路が連結かつ閉路を持たない迷路を、ローダーが要求する形式で直接出力します。同じ寸法と同じシードを指定すると、まったく同じ迷路を再現できます。
+
+ジェネレーターの自動テストを実行します：
+
+```bash
+make test-generator
+```
+
+メニュー、入力、SDL ライフサイクル、論理スケーリングのヘッドレステストを実行します：
+
+```bash
+make test-ui
+```
+
+旧 `python/maze_gen.py` は非推奨で、参考用としてのみ残されています。現在のビルドや実行には使用されません。
+
+### 現在の開発状況と問題記録
+
+現在のアプリケーションには、分離された SDL ライフサイクル、C 版完全迷路ジェネレーター、4 ボタンのスタートメニュー、3 言語の選択、完了ダイアログ、サイズ変更可能な論理キャンバスが含まれています。以下の UI 問題は回帰テストの記録として残されています：
+
+1. **修正済み：** `NEW MAZE` は寸法入力画面を開き、マウスによる入力欄の選択、数字入力、Backspace、`Tab` による切り替え、確定とキャンセル、および生成前の奇数範囲検証に対応しています。
+2. **修正済み：** サイズ変更後にボタンをクリックできなかった原因は、SDL がすでに変換したマウス座標を再変換していたことでした。現在は SDL が提供する論理イベント座標を直接使用し、非等比例リサイズ後のクリックを確認する回帰テストを追加しています。
+
+### 開発上の注意
+
+- プロジェクトは C11 を対象とし、デフォルトで `-Wall -Wextra -Wpedantic` を有効にしています。
+- BFS は元の迷路を変更しません。SDL2 は独立した経路オーバーレイを使ってアニメーションを描画します。
+- SDL2 の初期化、アニメーション、リソース解放は分離され、アプリケーション終了時に一度だけリソースを解放します。
+- 変更後は `make` で再ビルドし、デフォルト迷路でアニメーション全体を確認してください。

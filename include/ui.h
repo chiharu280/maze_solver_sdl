@@ -7,7 +7,8 @@
 
 typedef enum {
     UI_LANGUAGE_ENGLISH = 0,
-    UI_LANGUAGE_CHINESE
+    UI_LANGUAGE_CHINESE,
+    UI_LANGUAGE_FRENCH
 } UiLanguage;
 
 typedef enum {
