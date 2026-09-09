@@ -34,7 +34,8 @@ static int regenerate_maze(int width, int height) {
            load_maze_from_file(MAZE_FILE);
 }
 
-static VisualizationResult solve_and_visualize(AppContext* app) {
+static VisualizationResult solve_and_visualize(AppContext* app,
+                                               UiLanguage language) {
     int start_x;
     int start_y;
 
@@ -43,7 +44,8 @@ static VisualizationResult solve_and_visualize(AppContext* app) {
         return VISUALIZATION_ERROR;
     }
 
-    return visualization_play_maze(app, maze, path_x, path_y, path_len);
+    return visualization_play_maze(app, maze, path_x, path_y, path_len,
+                                   language);
 }
 
 int main(int argc, char* argv[]) {
@@ -53,38 +55,47 @@ int main(int argc, char* argv[]) {
     int maze_is_ready = load_maze_from_file(MAZE_FILE);
     int running = 1;
     int exit_code = 0;
-    const char* status_message = maze_is_ready ? "READY" : "MAZE LOAD FAILED";
+    UiLanguage language = UI_LANGUAGE_CHINESE;
+    UiStatus status = maze_is_ready ? UI_STATUS_READY :
+                                      UI_STATUS_MAZE_LOAD_FAILED;
 
     if (!app_init(&app)) {
         return 1;
     }
 
     while (running) {
-        MenuAction action = menu_run(&app, status_message);
+        MenuAction action = menu_run(&app, status, &language);
 
         switch (action) {
         case MENU_START:
+        {
+            VisualizationResult visualization_result;
             if (!maze_is_ready) {
-                status_message = "MAZE LOAD FAILED";
+                status = UI_STATUS_MAZE_LOAD_FAILED;
                 break;
             }
 
-            switch (solve_and_visualize(&app)) {
+            do {
+                visualization_result = solve_and_visualize(&app, language);
+            } while (visualization_result == VISUALIZATION_REPLAY);
+
+            switch (visualization_result) {
             case VISUALIZATION_FINISHED:
-                status_message = "SOLVE COMPLETE";
+                status = UI_STATUS_BACK_TO_MENU;
                 break;
             case VISUALIZATION_CANCELLED:
-                status_message = "BACK TO MENU";
+                status = UI_STATUS_BACK_TO_MENU;
                 break;
             case VISUALIZATION_QUIT:
                 running = 0;
                 break;
             case VISUALIZATION_ERROR:
             default:
-                status_message = "NO PATH FOUND";
+                status = UI_STATUS_NO_PATH_FOUND;
                 break;
             }
             break;
+        }
 
         case MENU_NEW_MAZE:
         {
@@ -93,14 +104,14 @@ int main(int argc, char* argv[]) {
             int height = maze_is_ready && dimensions_can_be_generated(COLS, ROWS) ?
                              ROWS : DEFAULT_GENERATED_HEIGHT;
             MazeSizeResult size_result = menu_prompt_maze_size(
-                &app, width, height, &width, &height);
+                &app, width, height, &width, &height, language);
 
             if (size_result == MAZE_SIZE_CONFIRMED) {
                 maze_is_ready = regenerate_maze(width, height);
-                status_message = maze_is_ready ? "NEW MAZE GENERATED" :
-                                                 "MAZE GENERATION FAILED";
+                status = maze_is_ready ? UI_STATUS_NEW_MAZE_GENERATED :
+                                         UI_STATUS_MAZE_GENERATION_FAILED;
             } else if (size_result == MAZE_SIZE_CANCELLED) {
-                status_message = "GENERATION CANCELLED";
+                status = UI_STATUS_GENERATION_CANCELLED;
             } else if (size_result == MAZE_SIZE_QUIT) {
                 running = 0;
             } else {

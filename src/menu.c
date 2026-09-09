@@ -1,19 +1,14 @@
 #include <SDL2/SDL.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "app.h"
 #include "menu.h"
+#include "ui.h"
 
 #define MENU_WIDTH 800
 #define MENU_HEIGHT 600
-
-typedef struct {
-    char character;
-    uint8_t rows[7];
-} Glyph;
 
 typedef struct {
     SDL_Rect bounds;
@@ -21,89 +16,31 @@ typedef struct {
     MenuAction action;
 } MenuButton;
 
-static const Glyph FONT[] = {
-    {'0', {14, 17, 19, 21, 25, 17, 14}},
-    {'1', {4, 12, 4, 4, 4, 4, 14}},
-    {'2', {14, 17, 1, 2, 4, 8, 31}},
-    {'3', {30, 1, 1, 14, 1, 1, 30}},
-    {'4', {2, 6, 10, 18, 31, 2, 2}},
-    {'5', {31, 16, 16, 30, 1, 1, 30}},
-    {'6', {14, 16, 16, 30, 17, 17, 14}},
-    {'7', {31, 1, 2, 4, 8, 8, 8}},
-    {'8', {14, 17, 17, 14, 17, 17, 14}},
-    {'9', {14, 17, 17, 15, 1, 1, 14}},
-    {'A', {14, 17, 17, 31, 17, 17, 17}},
-    {'B', {30, 17, 17, 30, 17, 17, 30}},
-    {'C', {14, 17, 16, 16, 16, 17, 14}},
-    {'D', {30, 17, 17, 17, 17, 17, 30}},
-    {'E', {31, 16, 16, 30, 16, 16, 31}},
-    {'F', {31, 16, 16, 30, 16, 16, 16}},
-    {'G', {14, 17, 16, 23, 17, 17, 15}},
-    {'H', {17, 17, 17, 31, 17, 17, 17}},
-    {'I', {14, 4, 4, 4, 4, 4, 14}},
-    {'J', {7, 2, 2, 2, 2, 18, 12}},
-    {'K', {17, 18, 20, 24, 20, 18, 17}},
-    {'L', {16, 16, 16, 16, 16, 16, 31}},
-    {'M', {17, 27, 21, 21, 17, 17, 17}},
-    {'N', {17, 25, 21, 19, 17, 17, 17}},
-    {'O', {14, 17, 17, 17, 17, 17, 14}},
-    {'P', {30, 17, 17, 30, 16, 16, 16}},
-    {'Q', {14, 17, 17, 17, 21, 18, 13}},
-    {'R', {30, 17, 17, 30, 20, 18, 17}},
-    {'S', {15, 16, 16, 14, 1, 1, 30}},
-    {'T', {31, 4, 4, 4, 4, 4, 4}},
-    {'U', {17, 17, 17, 17, 17, 17, 14}},
-    {'V', {17, 17, 17, 17, 17, 10, 4}},
-    {'W', {17, 17, 17, 21, 21, 21, 10}},
-    {'X', {17, 17, 10, 4, 10, 17, 17}},
-    {'Y', {17, 17, 10, 4, 4, 4, 4}},
-    {'Z', {31, 1, 2, 4, 8, 16, 31}}
-};
-
-static const uint8_t* find_glyph(char character) {
-    for (size_t i = 0; i < sizeof(FONT) / sizeof(FONT[0]); ++i) {
-        if (FONT[i].character == character) {
-            return FONT[i].rows;
-        }
-    }
-    return NULL;
-}
-
-static int text_width(const char* text, int scale) {
-    size_t length = strlen(text);
-    return length == 0 ? 0 : (int)(length * 6 - 1) * scale;
-}
-
-static void draw_text(AppContext* app, const char* text, int center_x, int y,
-                      int scale, SDL_Color color) {
-    int x = center_x - text_width(text, scale) / 2;
-    SDL_SetRenderDrawColor(app->renderer, color.r, color.g, color.b, color.a);
-
-    for (const char* current = text; *current; ++current, x += 6 * scale) {
-        const uint8_t* rows = find_glyph(*current);
-        if (!rows) {
-            continue;
-        }
-        for (int row = 0; row < 7; ++row) {
-            for (int column = 0; column < 5; ++column) {
-                if (rows[row] & (1u << (4 - column))) {
-                    SDL_Rect pixel = {x + column * scale, y + row * scale,
-                                      scale, scale};
-                    SDL_RenderFillRect(app->renderer, &pixel);
-                }
-            }
-        }
-    }
-}
-
 static int point_in_rect(float x, float y, const SDL_Rect* rect) {
     return x >= rect->x && x < rect->x + rect->w &&
            y >= rect->y && y < rect->y + rect->h;
 }
 
+static void set_menu_labels(MenuButton buttons[], UiLanguage language) {
+    int chinese = language == UI_LANGUAGE_CHINESE;
+    buttons[0].label = chinese ? "开始" : "START";
+    buttons[1].label = chinese ? "新迷宫" : "NEW MAZE";
+    buttons[2].label = chinese ? "语言 中文" : "LANGUAGE ENGLISH";
+    buttons[3].label = chinese ? "退出" : "QUIT";
+}
+
 static void render_menu(AppContext* app, const MenuButton buttons[],
                         size_t button_count, int hovered,
-                        const char* status_message) {
+                        UiStatus status, UiLanguage language) {
+    const int chinese = language == UI_LANGUAGE_CHINESE;
+    const char* title = chinese ? "迷宫求解器" : "MAZE SOLVER";
+    const char* subtitle = chinese ? "寻找最短路径" :
+                                      "FIND THE SHORTEST PATH";
+    const char* footer = chinese ? "可自由调整窗口" :
+                                    "RESIZE THE WINDOW FREELY";
+    const char* status_message = ui_status_text(language, status);
+    SDL_SetWindowTitle(app->window, chinese ? "迷宫求解器 - 菜单" :
+                                             "Maze Solver - Menu");
     SDL_SetRenderDrawColor(app->renderer, 12, 18, 32, 255);
     SDL_RenderClear(app->renderer);
 
@@ -115,10 +52,10 @@ static void render_menu(AppContext* app, const MenuButton buttons[],
         SDL_RenderDrawLine(app->renderer, 0, y, MENU_WIDTH, y);
     }
 
-    draw_text(app, "MAZE SOLVER", MENU_WIDTH / 2, 78, 8,
-              (SDL_Color){97, 218, 251, 255});
-    draw_text(app, "FIND THE SHORTEST PATH", MENU_WIDTH / 2, 162, 3,
-              (SDL_Color){148, 163, 184, 255});
+    ui_draw_text(app, title, MENU_WIDTH / 2, 62, chinese ? 4 : 8,
+                 (SDL_Color){97, 218, 251, 255});
+    ui_draw_text(app, subtitle, MENU_WIDTH / 2, 142, chinese ? 2 : 3,
+                 (SDL_Color){148, 163, 184, 255});
 
     for (size_t i = 0; i < button_count; ++i) {
         SDL_Rect shadow = buttons[i].bounds;
@@ -136,35 +73,34 @@ static void render_menu(AppContext* app, const MenuButton buttons[],
 
         SDL_SetRenderDrawColor(app->renderer, 96, 165, 250, 255);
         SDL_RenderDrawRect(app->renderer, &buttons[i].bounds);
-        draw_text(app, buttons[i].label, MENU_WIDTH / 2,
-                  buttons[i].bounds.y + 20, 4,
-                  (SDL_Color){241, 245, 249, 255});
+        ui_draw_text(app, buttons[i].label, MENU_WIDTH / 2,
+                     buttons[i].bounds.y + (chinese ? 14 : 17),
+                     chinese ? 2 : 4, (SDL_Color){241, 245, 249, 255});
     }
 
     if (status_message && status_message[0] != '\0') {
-        draw_text(app, status_message, MENU_WIDTH / 2, 535, 3,
-                  (SDL_Color){134, 239, 172, 255});
+        ui_draw_text(app, status_message, MENU_WIDTH / 2, 526,
+                     chinese ? 2 : 3, (SDL_Color){134, 239, 172, 255});
     }
-    draw_text(app, "RESIZE THE WINDOW FREELY", MENU_WIDTH / 2, 570, 2,
-              (SDL_Color){100, 116, 139, 255});
+    ui_draw_text(app, footer, MENU_WIDTH / 2, 566, 2,
+                 (SDL_Color){100, 116, 139, 255});
 
     SDL_RenderPresent(app->renderer);
 }
 
-MenuAction menu_run(AppContext* app, const char* status_message) {
-    static const MenuButton buttons[] = {
-        {{250, 235, 300, 68}, "START", MENU_START},
-        {{250, 330, 300, 68}, "NEW MAZE", MENU_NEW_MAZE},
-        {{250, 425, 300, 68}, "QUIT", MENU_QUIT}
+MenuAction menu_run(AppContext* app, UiStatus status, UiLanguage* language) {
+    MenuButton buttons[] = {
+        {{250, 195, 300, 60}, NULL, MENU_START},
+        {{250, 275, 300, 60}, NULL, MENU_NEW_MAZE},
+        {{250, 355, 300, 60}, NULL, MENU_ERROR},
+        {{250, 435, 300, 60}, NULL, MENU_QUIT}
     };
     const size_t button_count = sizeof(buttons) / sizeof(buttons[0]);
 
-    if (!app || !app->renderer || !app_set_logical_size(app, MENU_WIDTH,
-                                                         MENU_HEIGHT)) {
+    if (!app || !app->renderer || !language ||
+        !app_set_logical_size(app, MENU_WIDTH, MENU_HEIGHT)) {
         return MENU_ERROR;
     }
-    SDL_SetWindowTitle(app->window, "Maze Solver - Menu");
-
     int hovered = -1;
     for (;;) {
         SDL_Event event;
@@ -185,6 +121,11 @@ MenuAction menu_run(AppContext* app, const char* status_message) {
                 if (event.key.keysym.sym == SDLK_n) {
                     return MENU_NEW_MAZE;
                 }
+                if (event.key.keysym.sym == SDLK_l) {
+                    *language = *language == UI_LANGUAGE_CHINESE ?
+                                    UI_LANGUAGE_ENGLISH :
+                                    UI_LANGUAGE_CHINESE;
+                }
             }
             if (event.type == SDL_MOUSEMOTION) {
                 hovered = -1;
@@ -203,13 +144,20 @@ MenuAction menu_run(AppContext* app, const char* status_message) {
                     if (point_in_rect((float)event.button.x,
                                       (float)event.button.y,
                                       &buttons[i].bounds)) {
+                        if (i == 2) {
+                            *language = *language == UI_LANGUAGE_CHINESE ?
+                                            UI_LANGUAGE_ENGLISH :
+                                            UI_LANGUAGE_CHINESE;
+                            break;
+                        }
                         return buttons[i].action;
                     }
                 }
             }
         }
 
-        render_menu(app, buttons, button_count, hovered, status_message);
+        set_menu_labels(buttons, *language);
+        render_menu(app, buttons, button_count, hovered, status, *language);
         SDL_Delay(16);
     }
 }
@@ -249,9 +197,10 @@ static void delete_digit(char text[4]) {
 }
 
 static void draw_input(AppContext* app, const SDL_Rect* bounds,
-                       const char* label, const char* value, int focused) {
-    draw_text(app, label, bounds->x + bounds->w / 2, bounds->y - 38, 3,
-              (SDL_Color){148, 163, 184, 255});
+                       const char* label, const char* value, int focused,
+                       int chinese) {
+    ui_draw_text(app, label, bounds->x + bounds->w / 2, bounds->y - 38,
+                 chinese ? 2 : 3, (SDL_Color){148, 163, 184, 255});
     SDL_SetRenderDrawColor(app->renderer, 15, 23, 42, 255);
     SDL_RenderFillRect(app->renderer, bounds);
     if (focused) {
@@ -260,49 +209,58 @@ static void draw_input(AppContext* app, const SDL_Rect* bounds,
         SDL_SetRenderDrawColor(app->renderer, 71, 85, 105, 255);
     }
     SDL_RenderDrawRect(app->renderer, bounds);
-    draw_text(app, value, bounds->x + bounds->w / 2, bounds->y + 16, 5,
-              (SDL_Color){241, 245, 249, 255});
+    ui_draw_text(app, value, bounds->x + bounds->w / 2, bounds->y + 16, 5,
+                 (SDL_Color){241, 245, 249, 255});
 }
 
 static void draw_size_prompt(AppContext* app, const char* width_text,
                              const char* height_text, int focused,
-                             const char* validation_message) {
+                             const char* validation_message,
+                             UiLanguage language) {
     const SDL_Rect width_input = {180, 230, 180, 70};
     const SDL_Rect height_input = {440, 230, 180, 70};
     const SDL_Rect generate_button = {155, 400, 220, 68};
     const SDL_Rect cancel_button = {425, 400, 220, 68};
+    int chinese = language == UI_LANGUAGE_CHINESE;
 
     SDL_SetRenderDrawColor(app->renderer, 12, 18, 32, 255);
     SDL_RenderClear(app->renderer);
-    draw_text(app, "NEW MAZE", MENU_WIDTH / 2, 70, 8,
-              (SDL_Color){97, 218, 251, 255});
-    draw_text(app, "ODD SIZE FROM 3 TO 99", MENU_WIDTH / 2, 160, 3,
-              (SDL_Color){148, 163, 184, 255});
+    ui_draw_text(app, chinese ? "新迷宫" : "NEW MAZE", MENU_WIDTH / 2, 70,
+                 chinese ? 4 : 8, (SDL_Color){97, 218, 251, 255});
+    ui_draw_text(app, chinese ? "请输入3到99的奇数" :
+                                "ODD SIZE FROM 3 TO 99",
+                 MENU_WIDTH / 2, 160, chinese ? 2 : 3,
+                 (SDL_Color){148, 163, 184, 255});
 
-    draw_input(app, &width_input, "WIDTH", width_text, focused == 0);
-    draw_input(app, &height_input, "HEIGHT", height_text, focused == 1);
+    draw_input(app, &width_input, chinese ? "宽度" : "WIDTH", width_text,
+               focused == 0, chinese);
+    draw_input(app, &height_input, chinese ? "高度" : "HEIGHT", height_text,
+               focused == 1, chinese);
 
     SDL_SetRenderDrawColor(app->renderer, 37, 99, 235, 255);
     SDL_RenderFillRect(app->renderer, &generate_button);
     SDL_SetRenderDrawColor(app->renderer, 71, 85, 105, 255);
     SDL_RenderFillRect(app->renderer, &cancel_button);
-    draw_text(app, "GENERATE", generate_button.x + generate_button.w / 2,
-              generate_button.y + 20, 4,
-              (SDL_Color){241, 245, 249, 255});
-    draw_text(app, "CANCEL", cancel_button.x + cancel_button.w / 2,
-              cancel_button.y + 20, 4,
-              (SDL_Color){241, 245, 249, 255});
+    ui_draw_text(app, chinese ? "生成" : "GENERATE",
+                 generate_button.x + generate_button.w / 2,
+                 generate_button.y + (chinese ? 14 : 20), chinese ? 2 : 4,
+                 (SDL_Color){241, 245, 249, 255});
+    ui_draw_text(app, chinese ? "取消" : "CANCEL",
+                 cancel_button.x + cancel_button.w / 2,
+                 cancel_button.y + (chinese ? 14 : 20), chinese ? 2 : 4,
+                 (SDL_Color){241, 245, 249, 255});
 
-    draw_text(app, validation_message, MENU_WIDTH / 2, 340, 2,
-              (SDL_Color){248, 113, 113, 255});
-    draw_text(app, "TAB SWITCHES FIELD", MENU_WIDTH / 2, 535, 2,
-              (SDL_Color){100, 116, 139, 255});
+    ui_draw_text(app, validation_message, MENU_WIDTH / 2, 340, 2,
+                 (SDL_Color){248, 113, 113, 255});
+    ui_draw_text(app, chinese ? "TAB切换输入框" : "TAB SWITCHES FIELD",
+                 MENU_WIDTH / 2, 535, 2,
+                 (SDL_Color){100, 116, 139, 255});
     SDL_RenderPresent(app->renderer);
 }
 
 MazeSizeResult menu_prompt_maze_size(AppContext* app, int initial_width,
                                      int initial_height, int* width,
-                                     int* height) {
+                                     int* height, UiLanguage language) {
     const SDL_Rect width_input = {180, 230, 180, 70};
     const SDL_Rect height_input = {440, 230, 180, 70};
     const SDL_Rect generate_button = {155, 400, 220, 68};
@@ -321,7 +279,8 @@ MazeSizeResult menu_prompt_maze_size(AppContext* app, int initial_width,
     }
     snprintf(width_text, sizeof(width_text), "%d", initial_width);
     snprintf(height_text, sizeof(height_text), "%d", initial_height);
-    SDL_SetWindowTitle(app->window, "Maze Solver - New Maze");
+    SDL_SetWindowTitle(app->window, language == UI_LANGUAGE_CHINESE ?
+                      "迷宫求解器 - 新迷宫" : "Maze Solver - New Maze");
     SDL_StartTextInput();
 
     while (result == MAZE_SIZE_ERROR) {
@@ -390,13 +349,15 @@ MazeSizeResult menu_prompt_maze_size(AppContext* app, int initial_width,
                     result = MAZE_SIZE_CONFIRMED;
                     break;
                 }
-                validation_message = "ODD 3 TO 99 AND NOT 3 X 3";
+                validation_message = language == UI_LANGUAGE_CHINESE ?
+                                         "尺寸无效" :
+                                         "ODD 3 TO 99 AND NOT 3 X 3";
             }
         }
 
         if (result == MAZE_SIZE_ERROR) {
             draw_size_prompt(app, width_text, height_text, focused,
-                             validation_message);
+                             validation_message, language);
             SDL_Delay(16);
         }
     }
