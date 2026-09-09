@@ -114,12 +114,6 @@ make package-win
 
 产物位于 `dist/`，将整个目录复制到 Windows 环境后即可运行 `maze_solver.exe`。
 
-### 🛣️ 后续计划
-
-- [x] BFS / DFS 算法支持与路径动画
-- [x] 中文、英文、法文和日文界面与窗口自适应
-- [x] C 语言原生完美迷宫生成器
-- [ ] 背景音乐（BGM）与音效支持（使用 SDL2 原生音频接口或 SDL2_mixer）
 
 ---
 
@@ -233,12 +227,6 @@ make package-win
 
 The output is placed in `dist/`. Copy the entire directory to Windows and run `maze_solver.exe`.
 
-### 🛣️ Roadmap
-
-- [x] BFS / DFS support and path animation
-- [x] Chinese, English, French, and Japanese interfaces with responsive scaling
-- [x] Native C perfect-maze generator
-- [ ] Background music (BGM) and sound effects using SDL2's native audio API or SDL2_mixer
 
 ---
 
@@ -352,12 +340,6 @@ make package-win
 
 Le résultat se trouve dans `dist/`. Copiez le répertoire entier sous Windows, puis lancez `maze_solver.exe`.
 
-### 🛣️ Feuille de route
-
-- [x] Prise en charge de BFS / DFS et animation du chemin
-- [x] Interfaces en chinois, anglais, français et japonais avec mise à l’échelle adaptative
-- [x] Générateur natif en C de labyrinthes parfaits
-- [ ] Musique de fond (BGM) et effets sonores avec l’API audio native de SDL2 ou SDL2_mixer
 
 ---
 
@@ -471,9 +453,3 @@ make package-win
 
 成果物は `dist/` に生成されます。ディレクトリ全体を Windows 環境へコピーし、`maze_solver.exe` を実行してください。
 
-### 🛣️ 今後の予定
-
-- [x] BFS / DFS と経路アニメーション
-- [x] 中国語、英語、フランス語、日本語の UI と可変ウィンドウ対応
-- [x] C ネイティブの完全迷路ジェネレーター
-- [ ] SDL2 標準オーディオ API または SDL2_mixer を利用した BGM・効果音対応
